@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { BRAND, SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "./brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RoomCraft — 3D room planner",
-  description: "Pick a showroom, explore it in 3D and make it yours: swap, add and move furniture and see a priced shopping list.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: `${SITE_NAME}: ${SITE_TAGLINE}`, template: `%s · ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: ["room planner", "3D room design", "floor plan", "interior design", "furniture layout", "condo", "ออกแบบห้อง", "房间设计"],
+  category: "design",
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME}: ${SITE_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    locale: "en_US",
+    alternateLocale: ["th_TH", "zh_CN"],
+  },
+  twitter: { card: "summary_large_image", title: `${SITE_NAME}: ${SITE_TAGLINE}`, description: SITE_DESCRIPTION },
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: BRAND.cream,
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

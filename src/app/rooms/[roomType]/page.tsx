@@ -17,7 +17,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/rooms/[roomType]">): Promise<Metadata> {
   const { roomType } = await props.params;
   const type = roomTypes.find((t) => t.id === roomType);
-  return { title: type ? `${type.label} showrooms — RoomCraft` : "RoomCraft" };
+  return { title: type ? `${type.label} showrooms` : "Showrooms" };
 }
 
 /** Simple isometric room illustration tinted with the room's wall colour. */

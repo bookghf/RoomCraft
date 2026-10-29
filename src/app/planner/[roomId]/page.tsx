@@ -12,7 +12,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/planner/[roomId]">): Promise<Metadata> {
   const { roomId } = await props.params;
   const room = getRoom(roomId);
-  return { title: room ? `${room.name} — RoomCraft planner` : "RoomCraft planner" };
+  return { title: room ? `${room.name} · Planner` : "Planner" };
 }
 
 export default function PlannerPage(props: PageProps<"/planner/[roomId]">) {
