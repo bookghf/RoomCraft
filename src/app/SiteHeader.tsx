@@ -7,9 +7,12 @@ export default function SiteHeader() {
         <Link href="/" className="text-lg font-semibold tracking-tight">
           Room<span className="text-accent">Craft</span>
         </Link>
-        <nav className="text-sm text-muted">
+        <nav className="flex items-center gap-5 text-sm text-muted">
           <Link href="/rooms/bedroom" className="hover:text-foreground">
             Showrooms
+          </Link>
+          <Link href="/designer" className="hover:text-foreground">
+            Room designer
           </Link>
         </nav>
       </div>
