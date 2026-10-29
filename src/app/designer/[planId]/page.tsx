@@ -11,7 +11,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/designer/[planId]">): Promise<Metadata> {
   const { planId } = await props.params;
   const spec = getPlanSpec(planId);
-  return { title: spec ? `${spec.name.en} — RoomCraft designer` : "RoomCraft designer" };
+  return { title: spec ? `${spec.name.en} · Room designer` : "Room designer" };
 }
 
 export default function DesignerPlanPage(props: PageProps<"/designer/[planId]">) {
