@@ -1,6 +1,6 @@
 import { getCatalogItem } from "@/features/designer/data/catalog";
 import type { CatalogItem, DItem, Fixture, Plan, PlanWall } from "@/features/designer/types";
-import { rectsOverlap, type Rect2 } from "@/features/planner/lib/placement";
+import { rectsOverlap, type Rect2 } from "@/features/designer/lib/math";
 import { openingTop, pointInPolygon, RAILING_H, solidSpans, WALL_T, wallGeom } from "./geometry";
 
 const EPS = 1e-3;

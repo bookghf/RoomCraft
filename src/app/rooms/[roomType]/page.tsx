@@ -3,12 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getPresetDesign, getRoomsByType, roomTypes } from "@/data/rooms";
-import { roomBounds } from "@/features/planner/lib/placement";
-import { formatPrice, shoppingList } from "@/features/planner/lib/pricing";
-import type { Room } from "@/types/planner";
+import { formatPrice, totalPrice } from "@/features/designer/data/catalog";
+import { roomTypes, showroomSize, showroomsOfType } from "@/features/designer/data/showrooms";
+import { presetItems } from "@/features/designer/lib/presets";
+import PlanThumbnail from "@/features/designer/ui/PlanThumbnail";
 import SiteHeader from "../../SiteHeader";
-
 
 export function generateStaticParams() {
   return roomTypes.map((t) => ({ roomType: t.id }));
@@ -17,20 +16,7 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/rooms/[roomType]">): Promise<Metadata> {
   const { roomType } = await props.params;
   const type = roomTypes.find((t) => t.id === roomType);
-  return { title: type ? `${type.label} showrooms` : "Showrooms" };
-}
-
-/** Simple isometric room illustration tinted with the room's wall colour. */
-function RoomIllustration({ room }: { room: Room }) {
-  return (
-    <svg viewBox="0 0 200 120" className="h-full w-full" aria-hidden>
-      <polygon points="100,20 180,55 180,100 100,65" fill={room.wallColor} opacity="0.95" />
-      <polygon points="100,20 20,55 20,100 100,65" fill={room.wallColor} opacity="0.75" />
-      <polygon points="100,65 180,100 100,118 20,100" fill="#000" opacity="0.12" />
-      <polygon points="125,40 155,53 155,73 125,60" fill="#fff" opacity="0.6" />
-      <polygon points="70,82 110,95 90,103 50,90" fill="#fff" opacity="0.7" />
-    </svg>
-  );
+  return { title: type ? `${type.name.en} showrooms` : "Showrooms" };
 }
 
 export default function RoomTypePage(props: PageProps<"/rooms/[roomType]">) {
@@ -45,7 +31,7 @@ async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType
   const { roomType } = await params;
   const type = roomTypes.find((t) => t.id === roomType);
   if (!type) notFound();
-  const list = getRoomsByType(type.id);
+  const list = showroomsOfType(type.id);
 
   return (
     <div className="flex min-h-full flex-col">
@@ -56,8 +42,8 @@ async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType
             <ChevronLeft className="size-4" /> All rooms
           </Link>
         </nav>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{type.label} showrooms</h1>
-        <p className="mt-2 text-muted">{type.blurb}. Pick one to open it in the 3D planner.</p>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight">{type.name.en} showrooms</h1>
+        <p className="mt-2 text-muted">{type.blurb.en}. Pick one to open it furnished in the room designer.</p>
 
         <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
           {roomTypes.map((t) => (
@@ -68,7 +54,7 @@ async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType
                 t.id === type.id ? "border-foreground bg-foreground text-background" : "border-line bg-surface hover:border-foreground/40"
               }`}
             >
-              {t.label}
+              {t.name.en}
             </Link>
           ))}
         </div>
@@ -79,32 +65,32 @@ async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType
           </div>
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((room) => {
-              const b = roomBounds(room);
-              const preset = getPresetDesign(room.id);
-              const { count, total } = shoppingList(preset?.items ?? []);
+            {list.map((spec) => {
+              const room = spec.showroom!;
+              const items = presetItems(spec);
+              const size = showroomSize(spec);
               return (
                 <Link
-                  key={room.id}
-                  href={`/planner/${room.id}`}
+                  key={spec.id}
+                  href={`/designer/${spec.id}`}
                   className="group flex flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-0.5 hover:shadow-lg"
                 >
                   <div className="aspect-[5/3] p-4" style={{ background: room.thumbnail }}>
-                    <RoomIllustration room={room} />
+                    <PlanThumbnail doc={{ planId: spec.id, items }} className="h-full w-full drop-shadow-sm" />
                   </div>
                   <div className="flex flex-1 flex-col p-4">
-                    <h2 className="font-semibold">{room.name}</h2>
-                    <p className="mt-1 text-sm text-muted">{room.description}</p>
+                    <h2 className="font-semibold">{spec.name.en}</h2>
+                    <p className="mt-1 text-sm text-muted">{room.description.en}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
                       <span className="inline-flex items-center gap-1">
                         <Ruler className="size-3.5" />
-                        {(b.maxX - b.minX).toFixed(1)} × {(b.maxZ - b.minZ).toFixed(1)} m
+                        {size.w.toFixed(1)} × {size.d.toFixed(1)} m
                       </span>
-                      <span>{count} items</span>
-                      <span className="font-medium text-foreground">{formatPrice(total)}</span>
+                      <span>{items.length} items</span>
+                      <span className="font-medium text-foreground">{formatPrice(totalPrice(items))}</span>
                     </div>
                     <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent">
-                      Open in 3D <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
+                      Open in the designer <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
                     </span>
                   </div>
                 </Link>

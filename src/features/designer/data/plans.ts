@@ -1,4 +1,5 @@
 import type { PlanSpec, Text, XZ, Zone } from "@/features/designer/types";
+import { showroomSpecs } from "./showrooms";
 
 /**
  * Unit plans for the designer. The 30, 32 and 65 m² layouts are approximations of the
@@ -163,7 +164,10 @@ const plan65: PlanSpec = {
 
 export const planSpecs: PlanSpec[] = [emptyPlanSpec(), plan30, plan32, plan65];
 
+/** Unit floor plans and furnished showrooms, everything the designer can open. */
+export const allPlanSpecs: PlanSpec[] = [...planSpecs, ...showroomSpecs];
+
 export function getPlanSpec(id: string, size?: { w: number; d: number }): PlanSpec | undefined {
   if (id === EMPTY_PLAN_ID) return emptyPlanSpec(size?.w, size?.d);
-  return planSpecs.find((p) => p.id === id);
+  return allPlanSpecs.find((p) => p.id === id);
 }

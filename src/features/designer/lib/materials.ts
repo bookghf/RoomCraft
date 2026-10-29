@@ -1,6 +1,6 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from "three";
 import type { FloorMat, WallMat } from "@/features/designer/types";
-import { rand } from "@/features/planner/scene/models/parts";
+import { rand } from "@/features/designer/scene/parts";
 
 /**
  * Seamless 256 px patterns generated in code (no image files). Patterns are light grey so the

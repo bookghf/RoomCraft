@@ -1,6 +1,6 @@
 import { getCatalogItem } from "@/features/designer/data/catalog";
 import type { DItem } from "@/features/designer/types";
-import { rectsOverlap } from "@/features/planner/lib/placement";
+import { rectsOverlap } from "@/features/designer/lib/math";
 import { boxAabb, itemBox, itemObstacles, staticObstacles, withDescendants, type Ctx } from "./collision";
 import { openingTop, WALL_T, wallGeom } from "./geometry";
 import { faceOf } from "./placement";

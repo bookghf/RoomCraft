@@ -1,4 +1,4 @@
-import { designSchema } from "@/features/planner/lib/serialize";
+import { docSchema } from "@/features/designer/lib/storage";
 import { designs } from "./store";
 
 export async function POST(req: Request) {
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
-  const parsed = designSchema.safeParse(body);
+  const parsed = docSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json({ error: "Invalid design", issues: parsed.error.issues }, { status: 400 });
   }

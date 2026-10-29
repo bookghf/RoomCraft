@@ -3,7 +3,7 @@ export type Text = Record<Lang, string>;
 export type XZ = [number, number];
 
 /**
- * Coordinate conventions (same as the showroom planner)
+ * Coordinate conventions
  * - Floor is the XZ plane at y=0, metres, Y up.
  * - Walls are centre-lines of thickness WALL_T. A wall a→b has dir = (b-a)/len and
  *   normal = (-dir.z, dir.x); side +1 is the face on the normal side, side -1 the other face.
@@ -57,6 +57,22 @@ export interface PlanSpec {
   fixtures: Fixture[];
   ceiling: number;
   resizable?: { w: number; d: number };
+  /** Styled showrooms come furnished. */
+  showroom?: Showroom;
+}
+
+export type RoomType = "bedroom" | "living-room" | "dining" | "home-office" | "kids";
+
+/** A furnished starting point: items use the same floor coordinates as the plan. */
+export interface Showroom {
+  type: RoomType;
+  description: Text;
+  /** CSS gradient for gallery cards. */
+  thumbnail: string;
+  floor: { material: FloorMat; color: string };
+  wall: { material: WallMat; color: string };
+  /** Floor items: bottom-centre on the floor. Wall items: snapped to the nearest wall face. Ceiling items hang from the ceiling. */
+  items: { itemId: string; colorId?: string; x: number; z: number; rot: number }[];
 }
 
 export interface Opening {
@@ -109,6 +125,10 @@ export interface CatalogItem {
   category: Category;
   mount: Mount;
   name: Text;
+  /** Price in Thai baht. */
+  price: number;
+  /** Product code for branded showroom products. */
+  sku?: string;
   size: { w: number; d: number; h: number };
   colors: CatalogColor[];
   /** Small items can stand on it. */

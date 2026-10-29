@@ -1,8 +1,9 @@
 "use client";
 
 import { nanoid } from "nanoid";
-import { toast } from "@/features/planner/ui/Toast";
+import { toast } from "@/features/designer/ui/Toast";
 import { getPlanSpec } from "./data/plans";
+import { encodeShare, decodeShare } from "./lib/share";
 import { designerStorage } from "./lib/storage";
 import { contentKey, defaultDoc, t, useDesigner } from "./store";
 import type { DesignDoc } from "./types";
@@ -24,13 +25,14 @@ export function replaceUrl(url: string) {
   else window.history.replaceState(null, "", url);
 }
 
-export function designUrl(planId: string, params: { d?: string; r?: string } = {}) {
+export function designUrl(planId: string, params: { d?: string; r?: string; s?: string } = {}) {
   const q = new URLSearchParams(params as Record<string, string>).toString();
   return `/designer/${planId}${q ? `?${q}` : ""}`;
 }
 
 /**
- * Open order: ?r= recent entry → ?d= saved design → a new design of the plan.
+ * Open order: ?s= share link → ?r= recent entry → ?d= saved design → a new design of the plan.
+ * A shared design opens as a new unsaved design, kept in Recent like any other.
  * Recent entries remember which saved design (if any) they are unsaved changes to.
  */
 export function openDesign(planId: string) {
@@ -38,6 +40,20 @@ export function openDesign(planId: string) {
   const params = new URLSearchParams(window.location.search);
   const r = params.get("r");
   const d = params.get("d");
+  const shared = params.get("s");
+
+  if (shared !== null) {
+    const content = decodeShare(shared);
+    const base = defaultDoc(planId);
+    if (content && content.planId === planId && base) {
+      const doc: DesignDoc = { ...content, id: base.id, updatedAt: base.updatedAt };
+      useDesigner.getState().load(doc, { savedId: null, sessionId: base.id, baseline: contentKey(base) });
+      syncRecent(doc);
+      toast(t("sharedOpened"));
+      return true;
+    }
+    toast(t("sharedInvalid"));
+  }
 
   const recent = r ? store.getRecent(r) : undefined;
   if (recent && recent.doc.planId === planId) {
@@ -54,8 +70,15 @@ export function openDesign(planId: string) {
   const fresh = defaultDoc(planId);
   if (!fresh) return false;
   useDesigner.getState().load(fresh, { savedId: null, sessionId: fresh.id, baseline: contentKey(fresh) });
-  if (r || d) replaceUrl(designUrl(planId));
+  if (r || d || shared !== null) replaceUrl(designUrl(planId));
   return true;
+}
+
+/** Absolute link that opens a copy of the current design. */
+export function shareLink(): string | null {
+  const doc = useDesigner.getState().doc;
+  if (!doc) return null;
+  return `${window.location.origin}${designUrl(doc.planId, { s: encodeShare(doc) })}`;
 }
 
 /** Keep unsaved work in Recent; drop it once it matches the saved (or untouched) design again. */

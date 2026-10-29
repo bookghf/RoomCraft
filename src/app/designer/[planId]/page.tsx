@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getPlanSpec, planSpecs } from "@/features/designer/data/plans";
+import { allPlanSpecs, getPlanSpec } from "@/features/designer/data/plans";
 import Designer from "@/features/designer/Designer";
 
 export function generateStaticParams() {
-  return planSpecs.map((p) => ({ planId: p.id }));
+  return allPlanSpecs.map((p) => ({ planId: p.id }));
 }
 
 export async function generateMetadata(props: PageProps<"/designer/[planId]">): Promise<Metadata> {

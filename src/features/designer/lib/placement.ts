@@ -1,6 +1,6 @@
 import { getCatalogItem } from "@/features/designer/data/catalog";
 import type { CatalogItem, DItem, Plan, PlanWall, XZ } from "@/features/designer/types";
-import { normalizeAngle } from "@/features/planner/lib/placement";
+import { normalizeAngle } from "@/features/designer/lib/math";
 import { boxAabb, boxCorners, checkItems, fixtureBox, itemBox, type Box, type CheckResult, type Ctx } from "./collision";
 import { pointInPolygon, rotationForNormal, WALL_T, wallGeom, zoneCenter } from "./geometry";
 

@@ -7,7 +7,7 @@ import { PerspectiveCamera, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { getCatalogItem } from "@/features/designer/data/catalog";
 import { polygonBounds } from "@/features/designer/lib/geometry";
-import { useDesigner } from "@/features/designer/store";
+import { useDesigner, type CamRequest } from "@/features/designer/store";
 import { sceneRef } from "./sceneRef";
 
 const TWEEN_MS = 650;
@@ -47,12 +47,16 @@ export default function CameraRig() {
     };
   }, []);
 
+  // Requests wait here until the controls exist; the first frames can run before they mount.
+  const pending = useRef<typeof cam>(null);
   useEffect(() => {
-    const controls = controlsRef.current;
+    pending.current = cam;
+  }, [cam]);
+
+  function startTween(req: CamRequest, controls: OrbitControlsImpl) {
     const s = useDesigner.getState();
-    if (!cam || !controls || !s.plan || !s.doc) return;
+    if (!s.plan || !s.doc) return false;
     const camera = get().camera as PerspectiveCamera;
-    const req = cam.req;
 
     let bounds = s.plan.bounds;
     let minY = 0;
@@ -61,7 +65,7 @@ export default function CameraRig() {
     if (req.kind === "item") {
       const it = s.doc.items.find((i) => i.uid === req.uid);
       const c = it && getCatalogItem(it.itemId);
-      if (!it || !c) return;
+      if (!it || !c) return true;
       const r = Math.max(c.size.w, c.size.d) / 2 + 0.6;
       bounds = { minX: it.x - r, maxX: it.x + r, minZ: it.z - r, maxZ: it.z + r };
       minY = it.y;
@@ -83,12 +87,14 @@ export default function CameraRig() {
     }
     if (top) target.y = 0;
     tween.current = { fromPos: camera.position.clone(), fromTarget: controls.target.clone(), toPos: target.clone().add(dir.multiplyScalar(dist)), toTarget: target, start: performance.now() };
-  }, [cam, get]);
+    return true;
+  }
 
   useFrame(({ camera }) => {
     const controls = controlsRef.current;
-    const t = tween.current;
     if (!controls) return;
+    if (pending.current && startTween(pending.current.req, controls)) pending.current = null;
+    const t = tween.current;
     if (t) {
       const k = Math.min(1, (performance.now() - t.start) / TWEEN_MS);
       const e = ease(k);

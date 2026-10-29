@@ -4,14 +4,15 @@ import { nanoid } from "nanoid";
 import { temporal } from "zundo";
 import { create } from "zustand";
 import { useStoreWithEqualityFn } from "zustand/traditional";
-import { toast } from "@/features/planner/ui/Toast";
-import { normalizeAngle } from "@/features/planner/lib/placement";
+import { toast } from "@/features/designer/ui/Toast";
+import { normalizeAngle } from "@/features/designer/lib/math";
 import { getCatalogItem } from "./data/catalog";
 import { CEILING_LIMITS, EMPTY_LIMITS, EMPTY_PLAN_ID, EMPTY_SIZE, getPlanSpec } from "./data/plans";
 import { translate, useLangStore, type TKey } from "./i18n";
 import { checkItems, withDescendants, type Ctx } from "./lib/collision";
 import { cachedPlan, wallGeom, zoneCenter } from "./lib/geometry";
 import { defaultFloorColor, defaultWallColor } from "./lib/materials";
+import { presetItems } from "./lib/presets";
 import { alongFace, faceOf, findFreeSpot, mergeItems, placeFlat, placeOnFace, reseatForCeiling, transformItems, tryMoveSet, type Guide } from "./lib/placement";
 import { defaultMeasure, designerStorage, type MeasureSettings } from "./lib/storage";
 import type { Category, DesignDoc, DItem, FloorMat, Plan, WallMat, XZ } from "./types";
@@ -120,9 +121,10 @@ export function defaultDoc(planId: string, id: string = nanoid(10)): DesignDoc |
     id,
     planId,
     name: "",
-    items: [],
-    floor: { material: "wood", color: defaultFloorColor.wood },
-    wall: { material: "paint", color: defaultWallColor.paint },
+    // Showrooms open furnished, in their own colours.
+    items: presetItems(spec),
+    floor: spec.showroom?.floor ?? { material: "wood", color: defaultFloorColor.wood },
+    wall: spec.showroom?.wall ?? { material: "paint", color: defaultWallColor.paint },
     ceiling: spec.ceiling,
     size: planId === EMPTY_PLAN_ID ? { ...EMPTY_SIZE } : undefined,
     updatedAt: new Date().toISOString(),

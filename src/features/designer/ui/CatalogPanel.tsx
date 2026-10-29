@@ -29,7 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createElement, useMemo } from "react";
-import { catalog, categories, getCatalogItem, searchCatalog } from "@/features/designer/data/catalog";
+import { catalog, categories, formatPrice, getCatalogItem, searchCatalog } from "@/features/designer/data/catalog";
 import { tx, useLang, useT } from "@/features/designer/i18n";
 import { designerStorage } from "@/features/designer/lib/storage";
 import { useDesigner } from "@/features/designer/store";
@@ -135,7 +135,7 @@ export default function CatalogPanel() {
 
       <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-3 gap-2 overflow-y-auto px-3 pb-4 pt-1 sm:grid-cols-4 md:grid-cols-2">
         {list.map((item) => (
-          <ItemCard key={item.id} item={item} name={tx(item.name, lang)} onPick={() => addItem(item.id)} />
+          <ItemCard key={item.id} item={item} name={tx(item.name, lang)} price={formatPrice(item.price, lang)} onPick={() => addItem(item.id)} />
         ))}
         {list.length === 0 && <p className="col-span-full py-8 text-center text-sm text-stone-500">{search.trim() ? t("noResults") : t("noRecentItems")}</p>}
       </div>
@@ -159,7 +159,7 @@ function Chip({ active, onClick, children, icon: Icon }: { active: boolean; onCl
   );
 }
 
-function ItemCard({ item, name, onPick }: { item: CatalogItem; name: string; onPick: () => void }) {
+function ItemCard({ item, name, price, onPick }: { item: CatalogItem; name: string; price: string; onPick: () => void }) {
   const [c1, c2] = [item.colors[0]?.hex ?? "#ddd", item.colors[1]?.hex ?? item.colors[0]?.hex ?? "#bbb"];
   const { w, d, h } = item.size;
   return (
@@ -186,6 +186,7 @@ function ItemCard({ item, name, onPick }: { item: CatalogItem; name: string; onP
         <p className="text-[10px] text-stone-500">
           {cm(w)}×{cm(d)}×{cm(h)} cm
         </p>
+        <p className="mt-0.5 text-xs font-semibold tabular-nums text-stone-900">{price}</p>
       </div>
     </button>
   );

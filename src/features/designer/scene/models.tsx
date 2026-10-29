@@ -3,9 +3,8 @@
 import { Edges } from "@react-three/drei";
 import type { ReactNode } from "react";
 import type { CatalogItem, Fixture } from "@/features/designer/types";
-import { FurnitureModel } from "@/features/planner/scene/models/FurnitureModel";
-import { Ball, Block, Cyl, Legs, shade } from "@/features/planner/scene/models/parts";
-import type { Product, ShapeKey } from "@/types/planner";
+import { Ball, Block, Cyl, Legs, shade } from "./parts";
+import { ShapeModel, type ShapeKey } from "./shapes";
 
 const METAL = "#2b2b2b";
 const CHROME = "#c9ccd0";
@@ -357,11 +356,7 @@ const templates: Record<string, (p: P) => ReactNode> = {
 export function DesignerModel({ item, color, glow = 0 }: { item: CatalogItem; color: string; glow?: number }) {
   const { w, d, h } = item.size;
   const params = item.model.params ?? {};
-  if (item.model.template === "planner") {
-    // Showroom-planner shapes are reused as-is through a minimal product description.
-    const product = { shape: params.shape as ShapeKey, dimensions: { w, d, h }, colors: [{ id: "c", label: "", hex: color }] } as unknown as Product;
-    return <FurnitureModel product={product} color={color} />;
-  }
+  if (item.model.template === "shape") return <ShapeModel shape={params.shape as ShapeKey} w={w} d={d} h={h} color={color} />;
   const T = templates[item.model.template];
   if (!T) return <Placeholder w={w} d={d} h={h} />;
   return <group>{T({ w, d, h, c: color, glow, params })}</group>;
