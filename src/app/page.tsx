@@ -20,12 +20,20 @@ export default function Home() {
           <p className="mt-4 max-w-xl text-lg text-muted">
             Choose a ready-made showroom, walk around it, and rearrange the furniture until it feels like home.
           </p>
-          <Link
-            href="/rooms/bedroom"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-ink transition hover:opacity-90"
-          >
-            Start with a bedroom <ArrowRight className="size-4" />
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/rooms/bedroom"
+              className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-medium text-accent-ink transition hover:opacity-90"
+            >
+              Start with a bedroom <ArrowRight className="size-4" />
+            </Link>
+            <Link
+              href="/designer"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-6 py-3 text-sm font-medium transition hover:border-foreground/40"
+            >
+              Design your unit&apos;s floor plan <ArrowRight className="size-4" />
+            </Link>
+          </div>
         </section>
 
         <section aria-labelledby="room-types">
