@@ -2,7 +2,8 @@
 
 import { RoundedBox } from "@react-three/drei";
 import { Color } from "three";
-import type { Vec3 } from "@/types/planner";
+
+type Vec3 = [number, number, number];
 
 /** Lighten (+) or darken (-) a hex colour in HSL lightness. */
 export function shade(hex: string, amount: number): string {

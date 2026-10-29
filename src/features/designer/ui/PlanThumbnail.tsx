@@ -1,14 +1,16 @@
 import { colorOf, getCatalogItem } from "@/features/designer/data/catalog";
-import { WALL_T, wallGeom } from "@/features/designer/lib/geometry";
-import { planFor } from "@/features/designer/store";
+import { getPlanSpec } from "@/features/designer/data/plans";
+import { cachedPlan, WALL_T, wallGeom } from "@/features/designer/lib/geometry";
 import type { DesignDoc, ZoneKind } from "@/features/designer/types";
 
 const zoneFill: Record<ZoneKind, string> = { room: "#efe7da", kitchen: "#ece6dc", bath: "#dfe6ea", balcony: "#e2e0dc" };
 
 /** Top-down drawing of a plan and its furniture. */
 export default function PlanThumbnail({ doc, className = "" }: { doc: Pick<DesignDoc, "planId" | "size" | "items">; className?: string }) {
-  const plan = planFor(doc);
-  if (!plan) return null;
+  // Plain data only (no store), so server pages can draw thumbnails too.
+  const spec = getPlanSpec(doc.planId, doc.size);
+  if (!spec) return null;
+  const plan = cachedPlan(spec);
   const pad = 0.4;
   const { minX, maxX, minZ, maxZ } = plan.bounds;
   const vb = `${minX - pad} ${minZ - pad} ${maxX - minX + pad * 2} ${maxZ - minZ + pad * 2}`;

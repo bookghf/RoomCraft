@@ -4,7 +4,10 @@ import { Clock, Copy, EllipsisVertical, LayoutGrid, Pencil, Star, Trash2, X } fr
 import { nanoid } from "nanoid";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { EMPTY_SIZE, planSpecs } from "./data/plans";
+import { formatPrice, totalPrice } from "./data/catalog";
+import { allPlanSpecs, EMPTY_SIZE, planSpecs } from "./data/plans";
+import { showroomSpecs } from "./data/showrooms";
+import { presetItems } from "./lib/presets";
 import { tx, useLang, useRestoreLang, useT } from "./i18n";
 import { designerStorage, type RecentEntry } from "./lib/storage";
 import { designUrl } from "./session";
@@ -43,11 +46,36 @@ function when(iso: string, lang: string) {
   return new Date(iso).toLocaleString(lang === "zh" ? "zh-CN" : lang === "th" ? "th-TH" : "en-GB", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function Card({ href, doc, title, subtitle, badge, children }: { href: string; doc: Pick<DesignDoc, "planId" | "size" | "items">; title: string; subtitle: string; badge?: string; children?: React.ReactNode }) {
+function SectionTitle({ title, blurb }: { title: string; blurb: string }) {
+  return (
+    <div className="mb-3 mt-8 first:mt-6">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <p className="text-sm text-muted">{blurb}</p>
+    </div>
+  );
+}
+
+function Card({
+  href,
+  doc,
+  title,
+  subtitle,
+  badge,
+  thumbBg,
+  children,
+}: {
+  href: string;
+  doc: Pick<DesignDoc, "planId" | "size" | "items">;
+  title: string;
+  subtitle: string;
+  badge?: string;
+  thumbBg?: string;
+  children?: React.ReactNode;
+}) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:shadow-lg">
       <Link href={href} className="flex flex-1 flex-col">
-        <div className="aspect-[4/3] bg-stone-50 p-3">
+        <div className="aspect-[4/3] bg-stone-50 p-3" style={thumbBg ? { background: thumbBg } : undefined}>
           <PlanThumbnail doc={doc} className="h-full w-full" />
         </div>
         <div className="flex-1 p-3 pr-12">
@@ -72,7 +100,7 @@ export default function DesignerHome() {
   const [deleting, setDeleting] = useState<DesignDoc | null>(null);
   const [name, setName] = useState("");
 
-  const planName = (id: string) => tx(planSpecs.find((p) => p.id === id)?.name, lang);
+  const planName = (id: string) => tx(allPlanSpecs.find((p) => p.id === id)?.name, lang);
   const tabs: { id: Tab; label: string; icon: typeof LayoutGrid; count?: number }[] = [
     { id: "plans", label: t("plans"), icon: LayoutGrid },
     { id: "recent", label: t("recent"), icon: Clock, count: recent?.length },
@@ -115,13 +143,36 @@ export default function DesignerHome() {
         </div>
       </div>
 
+      {tab === "plans" && (
+        <>
+          <SectionTitle title={t("floorPlans")} blurb={t("floorPlansBlurb")} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {planSpecs.map((p) => {
+              const doc = { planId: p.id, size: p.resizable, items: [] };
+              const sub = p.area ? t("area", { n: p.area }) : t("resizable", { w: EMPTY_SIZE.w, d: EMPTY_SIZE.d });
+              return <Card key={p.id} href={designUrl(p.id)} doc={doc} title={tx(p.name, lang)} subtitle={`${sub} · ${p.zones.length > 1 ? p.zones.map((z) => tx(z.name, lang)).join(", ") : tx(p.zones[0].name, lang)}`} />;
+            })}
+          </div>
+          <SectionTitle title={t("showrooms")} blurb={t("showroomsBlurb")} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {showroomSpecs.map((p) => {
+              const items = presetItems(p);
+              return (
+                <Card
+                  key={p.id}
+                  href={designUrl(p.id)}
+                  doc={{ planId: p.id, items }}
+                  title={tx(p.name, lang)}
+                  subtitle={`${t("area", { n: p.area ?? 0 })} · ${t("itemsCount", { n: items.length })} · ${formatPrice(totalPrice(items), lang)}`}
+                  thumbBg={p.showroom?.thumbnail}
+                />
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {tab === "plans" &&
-          planSpecs.map((p) => {
-            const doc = { planId: p.id, size: p.resizable, items: [] };
-            const sub = p.area ? t("area", { n: p.area }) : t("resizable", { w: EMPTY_SIZE.w, d: EMPTY_SIZE.d });
-            return <Card key={p.id} href={designUrl(p.id)} doc={doc} title={tx(p.name, lang)} subtitle={`${sub} · ${p.zones.length > 1 ? p.zones.map((z) => tx(z.name, lang)).join(", ") : tx(p.zones[0].name, lang)}`} />;
-          })}
 
         {tab === "recent" &&
           recent?.map((r) => (

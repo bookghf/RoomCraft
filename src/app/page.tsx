@@ -1,11 +1,11 @@
 import { ArrowRight, Box, MousePointerClick, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { getRoomsByType, roomTypes } from "@/data/rooms";
+import { roomTypes, showroomsOfType } from "@/features/designer/data/showrooms";
 import SiteHeader from "./SiteHeader";
 
 const steps = [
   { icon: Box, title: "Pick a showroom", text: "Start from a styled room designed for the way you live." },
-  { icon: MousePointerClick, title: "Make it yours", text: "Move, rotate, swap and add pieces right in 3D." },
+  { icon: MousePointerClick, title: "Make it yours", text: "Move, rotate, restyle and add pieces right in 3D, or start from your unit's floor plan." },
   { icon: ShoppingBag, title: "See the total", text: "Your shopping list updates with every change." },
 ];
 
@@ -42,7 +42,7 @@ export default function Home() {
           </h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {roomTypes.map((t) => {
-              const count = getRoomsByType(t.id).length;
+              const count = showroomsOfType(t.id).length;
               return (
                 <Link
                   key={t.id}
@@ -52,8 +52,8 @@ export default function Home() {
                   <div className="h-36" style={{ background: t.gradient }} />
                   <div className="flex items-end justify-between gap-3 p-4">
                     <div>
-                      <h3 className="font-semibold">{t.label}</h3>
-                      <p className="text-sm text-muted">{t.blurb}</p>
+                      <h3 className="font-semibold">{t.name.en}</h3>
+                      <p className="text-sm text-muted">{t.blurb.en}</p>
                     </div>
                     <span className="shrink-0 text-xs text-muted">
                       {count} {count === 1 ? "showroom" : "showrooms"}

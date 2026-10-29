@@ -11,6 +11,7 @@ import {
   Grid2x2,
   Image as ImageIcon,
   LayoutGrid,
+  Link2,
   Lightbulb,
   List,
   Lock,
@@ -22,18 +23,19 @@ import {
   Ruler,
   Save,
   Share2,
+  ShoppingBag,
   SquareDashedMousePointer,
   Trash2,
   Undo2,
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { colorOf, getCatalogItem } from "@/features/designer/data/catalog";
+import { colorOf, formatPrice, getCatalogItem, totalPrice } from "@/features/designer/data/catalog";
 import { tx, useLang, useLangStore, useT } from "@/features/designer/i18n";
 import { capturePicture, sharePicture } from "@/features/designer/scene/capture";
-import { planTitle, saveDesign } from "@/features/designer/session";
+import { planTitle, saveDesign, shareLink } from "@/features/designer/session";
 import { redo, t as translateNow, undo, useDesigner, useTemporal } from "@/features/designer/store";
-import { toast } from "@/features/planner/ui/Toast";
+import { toast } from "@/features/designer/ui/Toast";
 import { ItemIcon } from "./CatalogPanel";
 import { Btn, CloseButton, glass, Modal, RoundButton, Swatches, Toggle } from "./common";
 
@@ -192,8 +194,38 @@ export function ShareMenu() {
       <button type="button" className={b} onClick={() => go("top")}>
         <Grid2x2 className="size-4" /> {t("shareTop")}
       </button>
+      <button
+        type="button"
+        className={b}
+        onClick={() => {
+          patch({ shareOpen: false });
+          void shareLinkNow();
+        }}
+      >
+        <Link2 className="size-4" /> {t("copyLink")}
+      </button>
     </div>
   );
+}
+
+/** Phones get the share sheet; elsewhere the link goes to the clipboard. */
+async function shareLinkNow() {
+  const url = shareLink();
+  if (!url) return;
+  if (typeof navigator.share === "function" && matchMedia("(pointer: coarse)").matches) {
+    try {
+      await navigator.share({ url, title: pictureMeta().title });
+      return;
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(translateNow("linkCopied"));
+  } catch {
+    toast(translateNow("linkFailed"));
+  }
 }
 
 export function FullViewControls() {
@@ -219,41 +251,112 @@ export function ItemList() {
   const open = useDesigner((s) => s.listOpen);
   const items = useDesigner((s) => s.doc?.items);
   const selected = useDesigner((s) => s.selected);
+  const [tab, setTab] = useState<"items" | "shopping">("items");
   const s = useDesigner.getState();
   if (!open || !items) return null;
+  const tabBtn = (id: typeof tab) => `flex-1 rounded-lg px-2 py-1 text-xs font-semibold ${tab === id ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-800"}`;
   return (
-    <div className={`pointer-events-auto flex max-h-full w-72 flex-col rounded-2xl ${glass}`}>
-      <div className="flex items-center justify-between py-1 pl-4 pr-1">
-        <p className="text-sm font-semibold text-stone-900">
-          {t("placedItems")} <span className="font-normal text-stone-400">· {items.length}</span>
-        </p>
+    <div className={`pointer-events-auto flex max-h-full w-80 flex-col rounded-2xl ${glass}`}>
+      <div className="flex items-center gap-2 py-1 pl-3 pr-1">
+        <div className="flex flex-1 gap-1 rounded-xl bg-stone-100 p-0.5" role="tablist">
+          <button type="button" role="tab" aria-selected={tab === "items"} className={tabBtn("items")} onClick={() => setTab("items")}>
+            {t("placedItems")} · {items.length}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === "shopping"} className={tabBtn("shopping")} onClick={() => setTab("shopping")}>
+            {t("shoppingList")}
+          </button>
+        </div>
         <CloseButton onClick={() => s.patch({ listOpen: false })} />
       </div>
-      <ol className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
-        {items.length === 0 && <li className="px-2 py-4 text-sm text-stone-500">{t("noItems")}</li>}
-        {items.map((it, i) => {
-          const cat = getCatalogItem(it.itemId);
-          return (
-            <li key={it.uid}>
-              <button
-                type="button"
-                onClick={() => {
-                  s.select(it.uid);
-                  s.requestCam({ kind: "item", uid: it.uid });
-                }}
-                className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-sm ${selected.includes(it.uid) ? "bg-amber-100" : "hover:bg-stone-100"}`}
-              >
-                <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-stone-900">{i + 1}</span>
-                <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: colorOf(cat, it.colorId) }} />
-                <ItemIcon item={cat} className="size-4 shrink-0 text-stone-500" />
-                <span className="min-w-0 flex-1 truncate text-stone-800">{cat ? tx(cat.name, lang) : t("unknownItem")}</span>
-                {it.locked && <Lock className="size-3.5 text-stone-400" />}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+      {items.length === 0 ? (
+        <p className="px-4 py-4 text-sm text-stone-500">{t("noItems")}</p>
+      ) : tab === "items" ? (
+        <ol className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+          {items.map((it, i) => {
+            const cat = getCatalogItem(it.itemId);
+            return (
+              <li key={it.uid}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    s.select(it.uid);
+                    s.requestCam({ kind: "item", uid: it.uid });
+                  }}
+                  className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-sm ${selected.includes(it.uid) ? "bg-amber-100" : "hover:bg-stone-100"}`}
+                >
+                  <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-stone-900">{i + 1}</span>
+                  <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: colorOf(cat, it.colorId) }} />
+                  <ItemIcon item={cat} className="size-4 shrink-0 text-stone-500" />
+                  <span className="min-w-0 flex-1 truncate text-stone-800">{cat ? tx(cat.name, lang) : t("unknownItem")}</span>
+                  {it.locked && <Lock className="size-3.5 text-stone-400" />}
+                  {cat && <span className="shrink-0 text-xs tabular-nums text-stone-500">{formatPrice(cat.price, lang)}</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <ShoppingLines />
+      )}
+      {items.length > 0 && (
+        <div className="flex items-center justify-between border-t border-stone-100 px-4 py-2.5 text-sm">
+          <span className="inline-flex items-center gap-1.5 font-medium text-stone-600">
+            <ShoppingBag className="size-4" /> {t("total")}
+          </span>
+          <span className="font-semibold tabular-nums text-stone-900">{formatPrice(totalPrice(items), lang)}</span>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Placed items grouped by product and colour, like a basket. */
+function ShoppingLines() {
+  const lang = useLang();
+  const items = useDesigner((s) => s.doc?.items) ?? [];
+  const s = useDesigner.getState();
+  const lines = new Map<string, { itemId: string; colorId: string; uids: string[] }>();
+  for (const it of items) {
+    const key = `${it.itemId}:${it.colorId}`;
+    const line = lines.get(key) ?? { itemId: it.itemId, colorId: it.colorId, uids: [] };
+    line.uids.push(it.uid);
+    lines.set(key, line);
+  }
+  return (
+    <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+      {[...lines.values()].map((l) => {
+        const cat = getCatalogItem(l.itemId);
+        if (!cat) return null;
+        const color = cat.colors.find((c) => c.id === l.colorId) ?? cat.colors[0];
+        return (
+          <li key={`${l.itemId}:${l.colorId}`}>
+            <button
+              type="button"
+              onClick={() => {
+                s.select(l.uids[0]);
+                s.requestCam({ kind: "item", uid: l.uids[0] });
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-sm hover:bg-stone-100"
+            >
+              <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: color?.hex }} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-stone-800">{tx(cat.name, lang)}</span>
+                <span className="block truncate text-[11px] text-stone-500">
+                  {color ? tx(color.name, lang) : ""}
+                  {cat.sku ? ` · ${cat.sku}` : ""}
+                </span>
+              </span>
+              <span className="shrink-0 text-right text-xs tabular-nums">
+                <span className="block text-stone-500">
+                  {l.uids.length} × {formatPrice(cat.price, lang)}
+                </span>
+                <span className="block font-semibold text-stone-900">{formatPrice(cat.price * l.uids.length, lang)}</span>
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

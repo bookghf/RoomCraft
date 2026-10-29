@@ -1,8 +1,29 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { Product, ShapeKey } from "@/types/planner";
 import { Ball, Block, Cyl, Legs, mix, rand, shade } from "./parts";
+
+/** Procedural furniture shapes, built from three.js primitives (no third-party models). */
+export type ShapeKey =
+  | "bed"
+  | "wardrobe"
+  | "dresser"
+  | "nightstand"
+  | "bookcase"
+  | "shelf"
+  | "floor-lamp"
+  | "table-lamp"
+  | "pendant"
+  | "rug"
+  | "plant"
+  | "wall-art"
+  | "mirror"
+  | "table"
+  | "desk"
+  | "coffee-table"
+  | "chair"
+  | "armchair"
+  | "sofa";
 
 interface ShapeProps {
   w: number;
@@ -358,13 +379,8 @@ const shapes: Record<ShapeKey, (p: ShapeProps) => ReactNode> = {
   sofa: (p) => <Sofa {...p} />,
 };
 
-/**
- * Procedural furniture built from primitives, sized to product.dimensions.
- * Origin at bottom-centre, front facing +Z.
- */
-export function FurnitureModel({ product, color }: { product: Product; color?: string }) {
-  const { w, d, h } = product.dimensions;
-  const c = color ?? product.colors[0]?.hex ?? "#cccccc";
-  const Shape = shapes[product.shape];
-  return <group>{Shape({ w, d, h, c })}</group>;
+/** A shape sized to w×d×h metres. Origin at bottom-centre, front facing +Z. */
+export function ShapeModel({ shape, w, d, h, color }: { shape: ShapeKey; w: number; d: number; h: number; color: string }) {
+  const Shape = shapes[shape];
+  return <group>{Shape({ w, d, h, c: color })}</group>;
 }

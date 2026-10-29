@@ -4,8 +4,8 @@ import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect } from "react";
-import Toaster from "@/features/planner/ui/Toast";
-import { getCatalogItem } from "./data/catalog";
+import Toaster from "@/features/designer/ui/Toast";
+import { formatPrice, getCatalogItem, totalPrice } from "./data/catalog";
 import { getPlanSpec } from "./data/plans";
 import { tx, useLang, useRestoreLang, useT } from "./i18n";
 import { designerStorage } from "./lib/storage";
@@ -176,6 +176,17 @@ function Header() {
           {dirty && <span className="ml-2 align-middle text-[11px] font-medium text-amber-600">● {t("unsavedChanges")}</span>}
         </h1>
       </div>
+      {!!doc?.items.length && (
+        <button
+          type="button"
+          onClick={() => useDesigner.getState().patch({ listOpen: true })}
+          className="hidden shrink-0 rounded-full px-3 py-1.5 text-right hover:bg-stone-100 sm:block"
+          title={t("shoppingList")}
+        >
+          <span className="block text-[10px] font-semibold uppercase tracking-wider text-stone-400">{t("total")}</span>
+          <span className="block text-sm font-semibold tabular-nums text-stone-900">{formatPrice(totalPrice(doc.items), lang)}</span>
+        </button>
+      )}
       <LangSwitch />
     </header>
   );

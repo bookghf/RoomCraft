@@ -9,7 +9,7 @@ import { wallGeom, WALL_T } from "@/features/designer/lib/geometry";
 import { alignSnap, alongFace, faceOf, faceZone, placeFlat, placeOnFace, transformItems, wallFaces, type Face, type Guide } from "@/features/designer/lib/placement";
 import { buzz, t, useDesigner } from "@/features/designer/store";
 import type { DItem, XZ } from "@/features/designer/types";
-import { toast } from "@/features/planner/ui/Toast";
+import { toast } from "@/features/designer/ui/Toast";
 import { foldedWalls } from "./PlanShell";
 import { isolatedZone, sceneRef } from "./sceneRef";
 
