@@ -175,8 +175,8 @@ export default function ItemPanel() {
       <PanelHeader title={cat ? tx(cat.name, lang) : t("unknownItem")} onClose={() => select(null)} />
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
         <div className="flex items-center gap-3">
-          <span className="inline-flex size-10 items-center justify-center rounded-xl bg-stone-100 text-stone-600">
-            <ItemIcon item={cat} className="size-5" />
+          <span className="inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-100 text-stone-600">
+            <ItemIcon item={cat} className={cat?.thumbnailUrl ? "size-full" : "size-5"} />
           </span>
           {cat && cat.colors.length > 1 && <Swatches colors={cat.colors.map((c) => ({ id: c.id, hex: c.hex, label: tx(c.name, lang) }))} value={it.colorId} onPick={(id) => setColor(it.uid, id)} />}
           {cat && (
