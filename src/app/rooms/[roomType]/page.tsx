@@ -3,19 +3,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { formatPrice, totalPrice } from "@/features/designer/data/catalog";
-import { roomTypes, showroomSize, showroomsOfType } from "@/features/designer/data/showrooms";
+import { loadContent, loadInstalledContent } from "@/features/designer/api";
+import { formatPrice, roomTypes, showroomsOfType, totalPrice } from "@/features/designer/content";
+import { showroomSize } from "@/features/designer/lib/plans";
 import { presetItems } from "@/features/designer/lib/presets";
 import PlanThumbnail from "@/features/designer/ui/PlanThumbnail";
 import SiteHeader from "../../SiteHeader";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const { roomTypes } = await loadContent();
   return roomTypes.map((t) => ({ roomType: t.id }));
 }
 
 export async function generateMetadata(props: PageProps<"/rooms/[roomType]">): Promise<Metadata> {
   const { roomType } = await props.params;
-  const type = roomTypes.find((t) => t.id === roomType);
+  const type = (await loadContent()).roomTypes.find((t) => t.id === roomType);
   return { title: type ? `${type.name.en} showrooms` : "Showrooms" };
 }
 
@@ -29,7 +31,8 @@ export default function RoomTypePage(props: PageProps<"/rooms/[roomType]">) {
 
 async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType]">["params"] }) {
   const { roomType } = await params;
-  const type = roomTypes.find((t) => t.id === roomType);
+  await loadInstalledContent();
+  const type = roomTypes().find((t) => t.id === roomType);
   if (!type) notFound();
   const list = showroomsOfType(type.id);
 
@@ -46,7 +49,7 @@ async function RoomTypeGallery({ params }: { params: PageProps<"/rooms/[roomType
         <p className="mt-2 text-muted">{type.blurb.en}. Pick one to open it furnished in the room designer.</p>
 
         <div className="mt-6 flex gap-2 overflow-x-auto pb-1">
-          {roomTypes.map((t) => (
+          {roomTypes().map((t) => (
             <Link
               key={t.id}
               href={`/rooms/${t.id}`}

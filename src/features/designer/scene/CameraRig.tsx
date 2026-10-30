@@ -5,7 +5,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import { PerspectiveCamera, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import { polygonBounds } from "@/features/designer/lib/geometry";
 import { useDesigner, type CamRequest } from "@/features/designer/store";
 import { sceneRef } from "./sceneRef";

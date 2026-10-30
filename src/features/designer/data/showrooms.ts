@@ -2,6 +2,9 @@ import { WALL_T } from "@/features/designer/lib/geometry";
 import type { FloorMat, OpeningSpec, PlanSpec, RoomType, Showroom, Text, XZ } from "@/features/designer/types";
 
 /**
+ * Seed data for the API (`roomcraft-api/tools/export-seed.ts`) and test fixtures. The app loads
+ * room types and showrooms from the API at runtime (see ../content.ts).
+ *
  * Styled showrooms: single rectangular rooms that open furnished. Room sizes are inner
  * (wall-face to wall-face) dimensions; the plan's wall centre-lines sit half a wall outside.
  */
@@ -242,14 +245,5 @@ export const showroomSpecs: PlanSpec[] = [
   }),
 ];
 
-export function showroomsOfType(type: string): PlanSpec[] {
-  return showroomSpecs.filter((s) => s.showroom?.type === type);
-}
-
 /** Inner room size in metres (wall face to wall face). */
-export function showroomSize(spec: PlanSpec): { w: number; d: number } {
-  const xs = spec.zones[0].polygon.map((p) => p[0]);
-  const zs = spec.zones[0].polygon.map((p) => p[1]);
-  const cm = (v: number) => Math.round(v * 100) / 100;
-  return { w: cm(Math.max(...xs) - Math.min(...xs) - WALL_T), d: cm(Math.max(...zs) - Math.min(...zs) - WALL_T) };
-}
+export { showroomSize } from "@/features/designer/lib/plans";

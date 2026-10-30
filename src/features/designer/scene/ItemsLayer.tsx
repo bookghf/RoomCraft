@@ -4,7 +4,7 @@ import { Edges, useCursor } from "@react-three/drei";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { useRef, useState } from "react";
 import type { Group } from "three";
-import { colorOf, getCatalogItem } from "@/features/designer/data/catalog";
+import { colorOf, getCatalogItem } from "@/features/designer/content";
 import { useDesigner } from "@/features/designer/store";
 import type { DItem } from "@/features/designer/types";
 import { onItemContextMenu, onItemPointerDown } from "./interaction";

@@ -1,4 +1,4 @@
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import type { DItem, PlanSpec } from "@/features/designer/types";
 import { cachedPlan, wallGeom } from "./geometry";
 import { alongFace, placeFlat, placeOnFace, wallFaces } from "./placement";

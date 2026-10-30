@@ -1,7 +1,10 @@
 import type { PlanSpec, Text, XZ, Zone } from "@/features/designer/types";
-import { showroomSpecs } from "./showrooms";
+import { CEILING_LIMITS, emptyPlanSpec } from "@/features/designer/lib/plans";
 
 /**
+ * Seed data for the API (`roomcraft-api/tools/export-seed.ts`) and test fixtures. The app loads
+ * plans from the API at runtime (see ../content.ts).
+ *
  * Unit plans for the designer. The 30, 32 and 65 m² layouts are approximations of the
  * sales-drawing room arrangements (walls on centre-lines, sizes in metres); plan heights
  * default to 2.60 m because the drawings do not state them.
@@ -33,28 +36,6 @@ function rect(x0: number, z0: number, x1: number, z1: number): XZ[] {
 
 function zone(id: string, kind: Zone["kind"], name: Text, polygon: XZ[]): Zone {
   return { id, kind, name, polygon };
-}
-
-export const EMPTY_PLAN_ID = "empty";
-export const EMPTY_SIZE = { w: 4, d: 4 };
-export const EMPTY_LIMITS = { min: 2, max: 10, step: 0.5 };
-export const CEILING_LIMITS = { min: 2.4, max: 3, step: 0.05, default: 2.6 };
-
-/** The empty room is generated from its current width and depth. */
-export function emptyPlanSpec(w = EMPTY_SIZE.w, d = EMPTY_SIZE.d): PlanSpec {
-  return {
-    id: EMPTY_PLAN_ID,
-    name: t("Empty room", "ห้องเปล่า", "空房间"),
-    area: null,
-    zones: [zone("room", "room", names.room, rect(0, 0, w, d))],
-    openings: [
-      { type: "window", at: [w / 2, 0], width: Math.min(1.6, w - 0.6), sill: 0.9, height: 1.3 },
-      { type: "door", at: [w - 0.75, d], width: 0.9 },
-    ],
-    fixtures: [],
-    ceiling: CEILING_LIMITS.default,
-    resizable: { w, d },
-  };
 }
 
 const plan30: PlanSpec = {
@@ -162,12 +143,6 @@ const plan65: PlanSpec = {
   ceiling: CEILING_LIMITS.default,
 };
 
+export { CEILING_LIMITS, EMPTY_LIMITS, EMPTY_PLAN_ID, EMPTY_SIZE, emptyPlanSpec } from "@/features/designer/lib/plans";
+
 export const planSpecs: PlanSpec[] = [emptyPlanSpec(), plan30, plan32, plan65];
-
-/** Unit floor plans and furnished showrooms, everything the designer can open. */
-export const allPlanSpecs: PlanSpec[] = [...planSpecs, ...showroomSpecs];
-
-export function getPlanSpec(id: string, size?: { w: number; d: number }): PlanSpec | undefined {
-  if (id === EMPTY_PLAN_ID) return emptyPlanSpec(size?.w, size?.d);
-  return allPlanSpecs.find((p) => p.id === id);
-}

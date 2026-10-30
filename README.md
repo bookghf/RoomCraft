@@ -27,6 +27,15 @@ npm run typecheck  # tsc --noEmit
 npm run lint
 ```
 
+## Configuration
+
+The catalog, floor plans, showrooms and room types come from the RoomCraft API (`../roomcraft-api`).
+Pages load them on the server and cache them for a few minutes, so the browser never calls the API.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `API_URL` | `http://localhost:8080` | Server-side only. Copy `.env.example` to `.env.local`; on Vercel, set it in the project settings |
+
 ## Routes
 
 | Route | Purpose |

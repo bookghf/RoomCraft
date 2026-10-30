@@ -29,7 +29,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { createElement, useMemo } from "react";
-import { catalog, categories, formatPrice, getCatalogItem, searchCatalog } from "@/features/designer/data/catalog";
+import { catalogCategories, formatPrice, getCatalogItem, searchCatalog, visibleCatalog } from "@/features/designer/content";
 import { tx, useLang, useT } from "@/features/designer/i18n";
 import { designerStorage } from "@/features/designer/lib/storage";
 import { useDesigner } from "@/features/designer/store";
@@ -95,7 +95,7 @@ export default function CatalogPanel() {
   const list = useMemo(() => {
     if (search.trim()) return searchCatalog(search);
     if (tab === "recent") return designerStorage().recentItems().flatMap((id) => getCatalogItem(id) ?? []);
-    return catalog.filter((c) => c.category === tab && !c.hidden);
+    return visibleCatalog().filter((c) => c.category === tab);
     // itemCount refreshes the Recently used tab after adding
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, tab, itemCount]);
@@ -125,7 +125,7 @@ export default function CatalogPanel() {
           <Chip active={tab === "recent"} onClick={() => patch({ catalogTab: "recent" })} icon={Clock}>
             {t("recentlyUsed")}
           </Chip>
-          {categories.map((c) => (
+          {catalogCategories().map((c) => (
             <Chip key={c.id} active={tab === c.id} onClick={() => patch({ catalogTab: c.id })} icon={categoryIcon[c.id]}>
               {tx(c.name, lang)}
             </Chip>

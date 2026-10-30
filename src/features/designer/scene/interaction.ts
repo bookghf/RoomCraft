@@ -3,7 +3,7 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useEffect } from "react";
 import { Plane, Ray, Raycaster, Vector2, Vector3 } from "three";
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import { checkItems, withDescendants, type Ctx } from "@/features/designer/lib/collision";
 import { wallGeom, WALL_T } from "@/features/designer/lib/geometry";
 import { alignSnap, alongFace, faceOf, faceZone, placeFlat, placeOnFace, transformItems, wallFaces, type Face, type Guide } from "@/features/designer/lib/placement";

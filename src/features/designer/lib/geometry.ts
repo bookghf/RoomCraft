@@ -260,6 +260,11 @@ export function cachedPlan(spec: PlanSpec): Plan {
   return plan;
 }
 
+/** Forget resolved plans, e.g. after new plan versions arrive from the API. */
+export function clearPlanCache() {
+  planCache.clear();
+}
+
 /** Zones a wall touches: the zones on either side. */
 export function wallZones(w: PlanWall): string[] {
   return w.sides.filter((s): s is string => s !== null);

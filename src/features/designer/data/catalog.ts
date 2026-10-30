@@ -1,7 +1,10 @@
 import type { CatalogColor, CatalogItem, Category, Text } from "@/features/designer/types";
 
 /**
- * Designer catalog, shaped like the future catalog API response (`catalogResponse`):
+ * Seed data for the API (`roomcraft-api/tools/export-seed.ts`) and test fixtures. The app loads
+ * the published catalog from the API at runtime (see ../content.ts).
+ *
+ * Designer catalog, shaped like the catalog API response:
  * each item names a model template plus params, so new items need data only.
  * Ids that are not in the catalog render as placeholder boxes (see models.tsx).
  */
@@ -135,37 +138,3 @@ export const catalog: CatalogItem[] = [
   { id: "shelf-lift", sku: "RC-2005", price: 690, category: "wall", mount: "wall", name: t("Lift wall shelf", "ชั้นติดผนัง ลิฟต์", "Lift 墙面搁板"), size: { w: 0.8, d: 0.22, h: 0.04 }, colors: wood, mountHeight: 1.4, model: { template: "shape", params: { shape: "shelf" } } },
   { id: "lamp-glow-pendant", sku: "RC-3003", price: 1290, category: "ceiling", mount: "ceiling", name: t("Glow pendant", "โคมไฟห้อย โกลว์", "Glow 吊灯"), size: { w: 0.4, d: 0.4, h: 0.6 }, colors: metal, light: true, model: { template: "shape", params: { shape: "pendant" } } },
 ];
-
-const byId = new Map(catalog.map((c) => [c.id, c]));
-
-export function getCatalogItem(id: string): CatalogItem | undefined {
-  return byId.get(id);
-}
-
-export function colorOf(item: CatalogItem | undefined, colorId: string | undefined): string {
-  return item?.colors.find((c) => c.id === colorId)?.hex ?? item?.colors[0]?.hex ?? "#bdbdbd";
-}
-
-/** Search names in every language, case-insensitive. */
-export function searchCatalog(q: string): CatalogItem[] {
-  const s = q.trim().toLowerCase();
-  const visible = catalog.filter((c) => !c.hidden);
-  if (!s) return visible;
-  return visible.filter((c) => Object.values(c.name).some((n) => n.toLowerCase().includes(s)) || c.id.includes(s) || !!c.sku?.toLowerCase().includes(s));
-}
-
-/** Thai baht, whole numbers, formatted for the current language. */
-export function formatPrice(value: number, lang: "en" | "th" | "zh" = "en"): string {
-  const locale = lang === "th" ? "th-TH" : lang === "zh" ? "zh-CN" : "en-US";
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "THB", maximumFractionDigits: 0 }).format(value);
-}
-
-/** Total price of placed items; unknown ids count as zero. */
-export function totalPrice(items: { itemId: string }[]): number {
-  return items.reduce((n, it) => n + (getCatalogItem(it.itemId)?.price ?? 0), 0);
-}
-
-/** The response the catalog API route serves; the app reads the same shape. */
-export function catalogResponse() {
-  return { success: true, data: { version: CATALOG_VERSION, categories, items: catalog } };
-}

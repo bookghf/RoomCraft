@@ -4,9 +4,8 @@ import { Clock, Copy, EllipsisVertical, LayoutGrid, Pencil, Star, Trash2, X } fr
 import { nanoid } from "nanoid";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { formatPrice, totalPrice } from "./data/catalog";
-import { allPlanSpecs, EMPTY_SIZE, planSpecs } from "./data/plans";
-import { showroomSpecs } from "./data/showrooms";
+import { formatPrice, getPlanSpec, showroomSpecs, totalPrice, unitPlanSpecs } from "./content";
+import { EMPTY_SIZE } from "./lib/plans";
 import { presetItems } from "./lib/presets";
 import { tx, useLang, useRestoreLang, useT } from "./i18n";
 import { designerStorage, type RecentEntry } from "./lib/storage";
@@ -100,7 +99,7 @@ export default function DesignerHome() {
   const [deleting, setDeleting] = useState<DesignDoc | null>(null);
   const [name, setName] = useState("");
 
-  const planName = (id: string) => tx(allPlanSpecs.find((p) => p.id === id)?.name, lang);
+  const planName = (id: string) => tx(getPlanSpec(id)?.name, lang);
   const tabs: { id: Tab; label: string; icon: typeof LayoutGrid; count?: number }[] = [
     { id: "plans", label: t("plans"), icon: LayoutGrid },
     { id: "recent", label: t("recent"), icon: Clock, count: recent?.length },
@@ -147,7 +146,7 @@ export default function DesignerHome() {
         <>
           <SectionTitle title={t("floorPlans")} blurb={t("floorPlansBlurb")} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {planSpecs.map((p) => {
+            {unitPlanSpecs().map((p) => {
               const doc = { planId: p.id, size: p.resizable, items: [] };
               const sub = p.area ? t("area", { n: p.area }) : t("resizable", { w: EMPTY_SIZE.w, d: EMPTY_SIZE.d });
               return <Card key={p.id} href={designUrl(p.id)} doc={doc} title={tx(p.name, lang)} subtitle={`${sub} · ${p.zones.length > 1 ? p.zones.map((z) => tx(z.name, lang)).join(", ") : tx(p.zones[0].name, lang)}`} />;
@@ -155,7 +154,7 @@ export default function DesignerHome() {
           </div>
           <SectionTitle title={t("showrooms")} blurb={t("showroomsBlurb")} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {showroomSpecs.map((p) => {
+            {showroomSpecs().map((p) => {
               const items = presetItems(p);
               return (
                 <Card
