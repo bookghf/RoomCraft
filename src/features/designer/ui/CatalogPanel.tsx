@@ -78,6 +78,8 @@ function itemIcon(item: CatalogItem | undefined): LucideIcon {
 }
 
 export function ItemIcon({ item, className, strokeWidth }: { item: CatalogItem | undefined; className?: string; strokeWidth?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (item?.thumbnailUrl) return <img src={item.thumbnailUrl} alt="" className={`${className ?? ""} object-contain`} loading="lazy" />;
   return createElement(itemIcon(item), { className, strokeWidth });
 }
 
