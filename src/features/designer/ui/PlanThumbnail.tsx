@@ -1,5 +1,5 @@
-import { colorOf, getCatalogItem } from "@/features/designer/data/catalog";
-import { getPlanSpec } from "@/features/designer/data/plans";
+import { colorOf, getCatalogItem } from "@/features/designer/content";
+import { getPlanSpec } from "@/features/designer/content";
 import { cachedPlan, WALL_T, wallGeom } from "@/features/designer/lib/geometry";
 import type { DesignDoc, ZoneKind } from "@/features/designer/types";
 

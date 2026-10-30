@@ -1,4 +1,4 @@
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import type { DItem } from "@/features/designer/types";
 import { rectsOverlap } from "@/features/designer/lib/math";
 import { boxAabb, itemBox, itemObstacles, staticObstacles, withDescendants, type Ctx } from "./collision";

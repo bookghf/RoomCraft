@@ -30,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { colorOf, formatPrice, getCatalogItem, totalPrice } from "@/features/designer/data/catalog";
+import { colorOf, formatPrice, getCatalogItem, totalPrice } from "@/features/designer/content";
 import { tx, useLang, useLangStore, useT } from "@/features/designer/i18n";
 import { capturePicture, sharePicture } from "@/features/designer/scene/capture";
 import { planTitle, saveDesign, shareLink } from "@/features/designer/session";

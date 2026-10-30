@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronsDown, ChevronsUp, Copy, Lock, LockOpen, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import { useRef } from "react";
-import { formatPrice, getCatalogItem } from "@/features/designer/data/catalog";
+import { formatPrice, getCatalogItem } from "@/features/designer/content";
 import { tx, useLang, useT } from "@/features/designer/i18n";
 import { nudgeVector } from "@/features/designer/scene/interaction";
 import { beginGesture, buzz, endGesture, useDesigner } from "@/features/designer/store";

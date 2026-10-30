@@ -1,6 +1,7 @@
 import { ArrowRight, Box, MousePointerClick, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { roomTypes, showroomsOfType } from "@/features/designer/data/showrooms";
+import { loadInstalledContent } from "@/features/designer/api";
+import { roomTypes, showroomsOfType } from "@/features/designer/content";
 import SiteHeader from "./SiteHeader";
 
 const steps = [
@@ -9,7 +10,8 @@ const steps = [
   { icon: ShoppingBag, title: "See the total", text: "Your shopping list updates with every change." },
 ];
 
-export default function Home() {
+export default async function Home() {
+  await loadInstalledContent();
   return (
     <div className="flex min-h-full flex-col">
       <SiteHeader />
@@ -41,7 +43,7 @@ export default function Home() {
             What room are you designing?
           </h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {roomTypes.map((t) => {
+            {roomTypes().map((t) => {
               const count = showroomsOfType(t.id).length;
               return (
                 <Link

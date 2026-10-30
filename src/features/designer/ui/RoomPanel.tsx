@@ -1,7 +1,7 @@
 "use client";
 
 import { Minus, Plus, RotateCcw } from "lucide-react";
-import { CEILING_LIMITS, EMPTY_LIMITS, EMPTY_PLAN_ID } from "@/features/designer/data/plans";
+import { CEILING_LIMITS, EMPTY_LIMITS, EMPTY_PLAN_ID } from "@/features/designer/lib/plans";
 import { useT, type TKey } from "@/features/designer/i18n";
 import { floorMaterials, floorSwatches, patternTexture, wallMaterials, wallSwatches, type PatternKind } from "@/features/designer/lib/materials";
 import { beginGesture, endGesture, useDesigner } from "@/features/designer/store";

@@ -4,7 +4,7 @@ import { Html, Line } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { useRef, type ReactNode } from "react";
 import type { Group } from "three";
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import { fixtureBox, wallBoxes, type Box } from "@/features/designer/lib/collision";
 import { distanceLines, cm, type P3 } from "@/features/designer/lib/measure";
 import { mergeItems } from "@/features/designer/lib/placement";

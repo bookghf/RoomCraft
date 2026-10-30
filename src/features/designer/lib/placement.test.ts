@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCatalogItem } from "@/features/designer/data/catalog";
+import { getCatalogItem } from "@/features/designer/content";
 import { emptyPlanSpec, planSpecs } from "@/features/designer/data/plans";
 import type { DItem } from "@/features/designer/types";
 import { checkItems, withDescendants, type Ctx } from "./collision";

@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { allPlanSpecs, getPlanSpec } from "@/features/designer/data/plans";
+import { loadInstalledContent } from "@/features/designer/api";
+import ContentProvider from "@/features/designer/ContentProvider";
+import { allPlanSpecs, getPlanSpec } from "@/features/designer/content";
 import Designer from "@/features/designer/Designer";
 
-export function generateStaticParams() {
-  return allPlanSpecs.map((p) => ({ planId: p.id }));
+export async function generateStaticParams() {
+  await loadInstalledContent();
+  return allPlanSpecs().map((p) => ({ planId: p.id }));
 }
 
 export async function generateMetadata(props: PageProps<"/designer/[planId]">): Promise<Metadata> {
   const { planId } = await props.params;
+  await loadInstalledContent();
   const spec = getPlanSpec(planId);
   return { title: spec ? `${spec.name.en} · Room designer` : "Room designer" };
 }
@@ -26,6 +30,11 @@ export default function DesignerPlanPage(props: PageProps<"/designer/[planId]">)
 
 async function DesignerRoute({ params }: { params: PageProps<"/designer/[planId]">["params"] }) {
   const { planId } = await params;
+  const content = await loadInstalledContent();
   if (!getPlanSpec(planId)) notFound();
-  return <Designer planId={planId} />;
+  return (
+    <ContentProvider content={content}>
+      <Designer planId={planId} />
+    </ContentProvider>
+  );
 }

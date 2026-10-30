@@ -2,7 +2,7 @@
 
 import { nanoid } from "nanoid";
 import { toast } from "@/features/designer/ui/Toast";
-import { getPlanSpec } from "./data/plans";
+import { getPlanSpec } from "./content";
 import { encodeShare, decodeShare } from "./lib/share";
 import { designerStorage } from "./lib/storage";
 import { contentKey, defaultDoc, t, useDesigner } from "./store";

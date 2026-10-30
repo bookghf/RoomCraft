@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCatalogItem } from "@/features/designer/data/catalog";
-import { getPlanSpec } from "@/features/designer/data/plans";
+import { getCatalogItem, getPlanSpec } from "@/features/designer/content";
 import { showroomSize, showroomSpecs } from "@/features/designer/data/showrooms";
 import { checkItems } from "./collision";
 import { cachedPlan } from "./geometry";
