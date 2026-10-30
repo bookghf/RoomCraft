@@ -141,6 +141,10 @@ export interface CatalogItem {
   mountHeight?: number;
   light?: boolean;
   model: { template: string; params?: Record<string, number | string | boolean> };
+  /** Uploaded .glb model; drawn instead of the template when set. */
+  modelUrl?: string;
+  /** Catalog picture; shown instead of the category icon when set. */
+  thumbnailUrl?: string;
   hidden?: boolean;
 }
 
