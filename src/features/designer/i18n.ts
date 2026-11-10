@@ -94,6 +94,8 @@ const dict = {
   showOthers: ["Show others", "แสดงห้องอื่น", "显示其他"],
   prevRoom: ["Previous room", "ห้องก่อนหน้า", "上一个房间"],
   nextRoom: ["Next room", "ห้องถัดไป", "下一个房间"],
+  hideRoomBar: ["Hide room bar", "ซ่อนแถบห้อง", "隐藏房间栏"],
+  showRoomBar: ["Show room bar", "แสดงแถบห้อง", "显示房间栏"],
   select: ["Select", "เลือกหลายชิ้น", "多选"],
   selectedN: ["{n} selected", "เลือก {n} ชิ้น", "已选 {n} 件"],
   groupHint: ["Tap items to add or remove them. Drag any of them to move the group.", "แตะสินค้าเพื่อเพิ่มหรือเอาออก ลากชิ้นใดก็ได้เพื่อย้ายทั้งกลุ่ม", "点按物品以添加或移除，拖动任意一件即可移动整组。"],

@@ -29,24 +29,31 @@ export function wallVisible(w: PlanWall, zoneId: string | null): boolean {
   return !zoneId || w.sides.includes(zoneId);
 }
 
+/** A wall faces the camera from outside: the camera is past its `out` side (+1 = +normal) and looks in through it. */
+function facesCamera(w: PlanWall, out: 1 | -1, cam: { x: number; z: number }, target: { x: number; z: number }): boolean {
+  const [ax, az] = w.a;
+  const [bx, bz] = w.b;
+  const len = Math.hypot(bx - ax, bz - az);
+  const nx = -(bz - az) / len;
+  const nz = (bx - ax) / len;
+  const vx = cam.x - target.x;
+  const vz = cam.z - target.z;
+  const vl = Math.hypot(vx, vz) || 1;
+  const outside = ((cam.x - ax) * nx + (cam.z - az) * nz) * out > 0;
+  return outside && ((vx * nx + vz * nz) * out) / vl > 0.3;
+}
+
 /**
  * Fold a wall when it is between the camera and the room: an outside wall whose outer face
  * looks towards the camera, or an inner wall crossed by the camera→target line (seen from above).
+ * With a focused room, that room's own walls are judged from inside it: only the ones in front
+ * of the camera fold, so its far walls always stay up.
  */
-export function wallBlocksView(w: PlanWall, cam: { x: number; z: number }, target: { x: number; z: number }): boolean {
+export function wallBlocksView(w: PlanWall, cam: { x: number; z: number }, target: { x: number; z: number }, focus: string | null = null): boolean {
   const [ax, az] = w.a;
   const [bx, bz] = w.b;
-  if (w.exterior) {
-    const len = Math.hypot(bx - ax, bz - az);
-    const nx = -(bz - az) / len;
-    const nz = (bx - ax) / len;
-    const out = w.sides[0] === null ? 1 : -1;
-    const vx = cam.x - target.x;
-    const vz = cam.z - target.z;
-    const vl = Math.hypot(vx, vz) || 1;
-    const outside = ((cam.x - ax) * nx + (cam.z - az) * nz) * out > 0;
-    return outside && ((vx * nx + vz * nz) * out) / vl > 0.3;
-  }
+  if (focus && w.sides.includes(focus)) return facesCamera(w, w.sides[0] === focus ? -1 : 1, cam, target);
+  if (w.exterior) return facesCamera(w, w.sides[0] === null ? 1 : -1, cam, target);
   // Inner walls fold when they cut the sight line to the target, or to points a little either side of it,
   // so a wall clipping the edge of a focused item folds too.
   const vx = target.x - cam.x;
