@@ -57,6 +57,28 @@ export function wallBoxes(w: PlanWall, ceiling: number): Box[] {
   });
 }
 
+/**
+ * The gaps doors and sliders leave in their walls, as boxes the wall's thickness deep.
+ * Furniture may stand beside an opening but never across it.
+ */
+export function doorwayBoxes(plan: Plan, ceiling: number): Obstacle[] {
+  const out: Obstacle[] = [];
+  for (const w of plan.walls) {
+    if (w.kind !== "solid") continue;
+    const g = wallGeom(w);
+    const rot = wallRot(w);
+    w.openings.forEach((o, i) => {
+      if (o.type === "window") return;
+      const mid = o.offset + o.width / 2;
+      out.push({
+        ref: `opening:${w.id}:${i}`,
+        box: { cx: w.a[0] + g.dir[0] * mid, cz: w.a[1] + g.dir[1] * mid, hw: o.width / 2, hd: WALL_T / 2, rot, y0: 0, y1: openingTop(o, ceiling) },
+      });
+    });
+  }
+  return out;
+}
+
 export function boxesOverlap(a: Box, b: Box): boolean {
   if (a.y0 >= b.y1 - EPS || b.y0 >= a.y1 - EPS) return false;
   return rectsOverlap(a, b);
@@ -140,7 +162,7 @@ function blocksOpening(plan: Plan, it: DItem, cat: CatalogItem, ceiling: number)
 
 /**
  * Check a set of moved items (new states) against walls, fixtures, every other item and the plan outline.
- * Flat items (rugs) are only blocked by walls; nothing is blocked by a rug.
+ * Flat items (rugs) are only blocked by walls and doorways; nothing is blocked by a rug.
  */
 export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
   const movedIds = new Set(moved.map((m) => m.uid));
@@ -158,6 +180,14 @@ export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
       if (it.wallId) blockers.add(`wall:${it.wallId}`);
     }
     if (box.y1 > ctx.ceiling + EPS) valid = false;
+    if (cat.mount !== "wall") {
+      for (const o of doorwayBoxes(ctx.plan, ctx.ceiling)) {
+        if (boxesOverlap(box, o.box)) {
+          valid = false;
+          blockers.add(o.ref);
+        }
+      }
+    }
     for (const o of obstacles) {
       if (o.flat) continue;
       if (cat.flat && !o.ref.startsWith("wall:")) continue;

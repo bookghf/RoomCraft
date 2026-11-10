@@ -140,6 +140,7 @@ export function contentKey(doc: DesignDoc): string {
 function describeBlocker(ref: string): string {
   if (ref.startsWith("wall:")) return t("aWall");
   if (ref.startsWith("fixture:")) return t("aFixture");
+  if (ref.startsWith("opening:")) return t("aDoorway");
   const uid = ref.slice(5);
   const it = useDesigner.getState().doc?.items.find((i) => i.uid === uid);
   const cat = it && getCatalogItem(it.itemId);
