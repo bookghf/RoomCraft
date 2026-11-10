@@ -59,7 +59,7 @@ export interface DesignerState {
   lights: boolean;
   measure: MeasureSettings;
   menu: { uid: string; x: number; y: number } | null;
-  dialog: null | "save" | "reset";
+  dialog: null | "save" | "reset" | "fengshui";
   nudgeStep: number;
 
   load(doc: DesignDoc, opts: { savedId: string | null; sessionId: string; baseline: string }): void;
