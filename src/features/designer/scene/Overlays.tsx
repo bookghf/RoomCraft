@@ -6,7 +6,7 @@ import { useMemo, useRef, type ReactNode } from "react";
 import { BufferGeometry, Float32BufferAttribute, type Group } from "three";
 import { getCatalogItem } from "@/features/designer/content";
 import { fixtureBox, wallBoxes, type Box } from "@/features/designer/lib/collision";
-import { clearances, doorSwings, swingPolygon } from "@/features/designer/lib/geometry";
+import { doorSwings, swingPolygon } from "@/features/designer/lib/geometry";
 import { distanceLines, cm, type P3 } from "@/features/designer/lib/measure";
 import { mergeItems } from "@/features/designer/lib/placement";
 import { useDesigner } from "@/features/designer/store";
@@ -72,8 +72,8 @@ function BoxOutline({ box, color }: { box: Box; color: string }) {
   );
 }
 
-/** A convex floor area, filled and outlined, just above the floor. */
-function FloorArea({ poly, color, opacity, y = 0.006, outline = true, dashed }: { poly: XZ[]; color: string; opacity: number; y?: number; outline?: boolean; dashed?: boolean }) {
+/** A convex floor area, filled, just above the floor. */
+function FloorArea({ poly, color, opacity, y = 0.006 }: { poly: XZ[]; color: string; opacity: number; y?: number }) {
   const geo = useMemo(() => {
     const pos: number[] = [];
     for (let i = 1; i < poly.length - 1; i++) for (const p of [poly[0], poly[i], poly[i + 1]]) pos.push(p[0], y, p[1]);
@@ -86,13 +86,12 @@ function FloorArea({ poly, color, opacity, y = 0.006, outline = true, dashed }: 
       <mesh geometry={geo} renderOrder={8}>
         <meshBasicMaterial color={color} transparent opacity={opacity} side={2} depthWrite={false} />
       </mesh>
-      {outline && <Line points={[...poly, poly[0]].map((p) => [p[0], y, p[1]] as P3)} color={color} lineWidth={1.2} dashed={dashed} dashSize={0.06} gapSize={0.04} />}
     </group>
   );
 }
 
-/** Door swing arcs, drawn like on a floor plan so it is clear where furniture cannot go. */
-function DoorSwingMarks({ highlight }: { highlight: Set<string> }) {
+/** Door swing arcs, drawn like on a floor plan so users can see where doors open. */
+function DoorSwingMarks() {
   const plan = useDesigner((s) => s.plan);
   const iso = useDesigner(isolatedZone);
   if (!plan) return null;
@@ -102,14 +101,13 @@ function DoorSwingMarks({ highlight }: { highlight: Set<string> }) {
         .filter((sw) => zoneVisible(plan, iso, sw.hinge[0] + sw.open[0] * 0.1, sw.hinge[1] + sw.open[1] * 0.1))
         .map((sw) => {
           const poly = swingPolygon(sw, 24);
-          const hot = highlight.has(`door:${sw.id}`);
           const y = 0.008;
           const end: P3 = [sw.hinge[0] + sw.open[0] * sw.radius, y, sw.hinge[1] + sw.open[1] * sw.radius];
           return (
             <group key={sw.id}>
-              <FloorArea poly={poly} color={hot ? "#e5484d" : "#8c7f6d"} opacity={hot ? 0.3 : 0.08} outline={false} />
-              <Line points={poly.slice(1).map((p) => [p[0], y, p[1]] as P3)} color={hot ? "#e5484d" : "#8c7f6d"} lineWidth={1.2} dashed dashSize={0.05} gapSize={0.035} />
-              <Line points={[[sw.hinge[0], y, sw.hinge[1]], end]} color={hot ? "#e5484d" : "#6b6050"} lineWidth={2} />
+              <FloorArea poly={poly} color="#8c7f6d" opacity={0.08} />
+              <Line points={poly.slice(1).map((p) => [p[0], y, p[1]] as P3)} color="#8c7f6d" lineWidth={1.2} dashed dashSize={0.05} gapSize={0.035} />
+              <Line points={[[sw.hinge[0], y, sw.hinge[1]], end]} color="#6b6050" lineWidth={2} />
             </group>
           );
         })}
@@ -165,16 +163,9 @@ export default function Overlays() {
     }
   }
 
-  const blocked = new Set(drag?.blockers ?? []);
-  // While dragging, show every space furniture has to keep clear (door walkways, sliders, windows).
-  const keepClear = drag ? clearances(plan, doc.ceiling).filter((c) => !c.ref.startsWith("door:") || c.poly.length === 4) : [];
-
   return (
     <OverlayGroup>
-      <DoorSwingMarks highlight={blocked} />
-      {keepClear.map((c, i) => (
-        <FloorArea key={`k${i}`} poly={c.poly} color={blocked.has(c.ref) ? "#e5484d" : "#8c7f6d"} opacity={blocked.has(c.ref) ? 0.3 : 0.1} y={0.007} dashed />
-      ))}
+      <DoorSwingMarks />
       {blockerBoxes.map((b, i) => (
         <BoxOutline key={i} box={b} color="#e5484d" />
       ))}
