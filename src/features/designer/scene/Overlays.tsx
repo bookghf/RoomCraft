@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef, type ReactNode } from "react";
 import { BufferGeometry, Float32BufferAttribute, type Group } from "three";
 import { getCatalogItem } from "@/features/designer/content";
-import { fixtureBox, wallBoxes, type Box } from "@/features/designer/lib/collision";
+import { doorwayBoxes, fixtureBox, wallBoxes, type Box } from "@/features/designer/lib/collision";
 import { doorSwings, swingPolygon } from "@/features/designer/lib/geometry";
 import { distanceLines, cm, type P3 } from "@/features/designer/lib/measure";
 import { mergeItems } from "@/features/designer/lib/placement";
@@ -157,6 +157,9 @@ export default function Overlays() {
     if (kind === "fixture") {
       const f = plan.fixtures.find((x) => x.id === id);
       if (f) blockerBoxes.push(fixtureBox(f));
+    } else if (kind === "opening") {
+      const o = doorwayBoxes(plan, doc.ceiling).find((d) => d.ref === ref);
+      if (o) blockerBoxes.push(o.box);
     } else if (kind === "wall") {
       const w = plan.walls.find((x) => x.id === id);
       if (w) blockerBoxes.push(...wallBoxes(w, doc.ceiling));
