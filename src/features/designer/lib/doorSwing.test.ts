@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { emptyPlanSpec, planSpecs } from "@/features/designer/data/plans";
 import type { DItem, OpeningSpecType } from "@/features/designer/types";
 import { checkItems } from "./collision";
-import { doorSwings, parseOpeningType, resolvePlan } from "./geometry";
+import { doorSwings, parseOpeningType, resolvePlan, zoneRuns } from "./geometry";
 
 // 4 x 4 m room with a door at x 2.8–3.7 on the back wall (z = 4).
 const room = resolvePlan(emptyPlanSpec(4, 4));
@@ -70,5 +70,19 @@ describe("doorways", () => {
   it("allow furniture beside a door", () => {
     const it = plantAt(2.4, 3.65);
     expect(checkItems({ plan: room, ceiling: 2.6, items: [it] }, [it]).valid).toBe(true);
+  });
+});
+
+describe("room size lines", () => {
+  it("give a focused room one line per side, pointing out of the room", () => {
+    const plan = resolvePlan(planSpecs.find((p) => p.id === "1br-30")!);
+    const runs = zoneRuns(plan.zones.find((z) => z.id === "bedroom")!); // x 3–6, z 0–4
+    expect(runs).toHaveLength(4);
+    const lens = runs.map((r) => Math.hypot(r.b[0] - r.a[0], r.b[1] - r.a[1])).sort();
+    expect(lens).toEqual([3, 3, 4, 4]);
+    for (const r of runs) {
+      const mid = [(r.a[0] + r.b[0]) / 2 + r.out[0], (r.a[1] + r.b[1]) / 2 + r.out[1]];
+      expect(mid[0] < 3 || mid[0] > 6 || mid[1] < 0 || mid[1] > 4).toBe(true);
+    }
   });
 });
