@@ -8,6 +8,17 @@ import { designerStorage } from "./lib/storage";
 import { contentKey, defaultDoc, t, useDesigner } from "./store";
 import type { DesignDoc } from "./types";
 
+const SAVED_FLAG = "roomcraft:savedToast";
+
+function showSavedToastAfterReload() {
+  try {
+    if (sessionStorage.getItem(SAVED_FLAG)) {
+      sessionStorage.removeItem(SAVED_FLAG);
+      toast(t("savedToast"));
+    }
+  } catch {}
+}
+
 /** URL updates wait while a back-button layer entry is on top of the history (see useBackLayers). */
 let pendingUrl: string | null = null;
 let layerOnTop = false;
@@ -36,6 +47,7 @@ export function designUrl(planId: string, params: { d?: string; r?: string; s?: 
  * Recent entries remember which saved design (if any) they are unsaved changes to.
  */
 export function openDesign(planId: string) {
+  showSavedToastAfterReload();
   const store = designerStorage();
   const params = new URLSearchParams(window.location.search);
   const r = params.get("r");
@@ -115,8 +127,11 @@ export function saveDesign(name?: string): boolean {
   useDesigner.temporal.getState().pause();
   useDesigner.setState({ doc: { ...doc, id, name: saved.name }, savedId: id, sessionId: id, baseline: contentKey(saved), dialog: null });
   useDesigner.temporal.getState().resume();
-  replaceUrl(designUrl(doc.planId, { d: id }));
-  toast(t("savedToast"));
+  // Reload the page on the saved design; the toast is shown once it opens again.
+  try {
+    sessionStorage.setItem(SAVED_FLAG, "1");
+  } catch {}
+  window.location.replace(designUrl(doc.planId, { d: id }));
   return true;
 }
 
