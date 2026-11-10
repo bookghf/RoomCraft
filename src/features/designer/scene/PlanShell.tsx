@@ -243,10 +243,11 @@ export default function PlanShell() {
     if (!plan) return;
     const target = sceneRef.controls?.target ?? { x: 0, z: 0 };
     foldedWalls.clear();
+    const focus = useDesigner.getState().focusZone;
     for (const w of plan.walls) {
       const g = groups.current.get(w.id);
       if (!g) continue;
-      const fold = wallBlocksView(w, camera.position, target);
+      const fold = wallBlocksView(w, camera.position, target, focus);
       if (fold) foldedWalls.add(w.id);
       g.scale.y = fold ? FOLDED_SCALE : 1;
       const frames = g.getObjectByName("frames");

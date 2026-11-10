@@ -2,8 +2,10 @@
 
 import {
   Box,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Copy,
   Ellipsis,
   Eye,
@@ -60,13 +62,28 @@ export function RoomChip() {
   const plan = useDesigner((s) => s.plan);
   const focusZone = useDesigner((s) => s.focusZone);
   const only = useDesigner((s) => s.onlyThisRoom);
+  // On phones the chip can be tucked away to free the view; wide screens always show it.
+  const [tucked, setTucked] = useState(false);
   const s = useDesigner.getState();
   if (!plan) return null;
   const zone = plan.zones.find((z) => z.id === focusZone);
   const multi = plan.zones.length > 1;
   const arrow = "inline-flex size-8 items-center justify-center rounded-full text-stone-600 hover:bg-stone-100";
   return (
-    <div className="pointer-events-auto flex max-w-full flex-col items-center gap-1.5">
+    <>
+    {tucked && (
+      <button
+        type="button"
+        onClick={() => setTucked(false)}
+        aria-label={t("showRoomBar")}
+        title={t("showRoomBar")}
+        className={`pointer-events-auto inline-flex h-7 max-w-[45vw] items-center gap-1 rounded-full px-2.5 text-xs font-medium text-stone-700 md:hidden ${glass}`}
+      >
+        <span className="truncate">{zone ? tx(zone.name, lang) : t("allRooms")}</span>
+        <ChevronDown className="size-3.5 shrink-0" />
+      </button>
+    )}
+    <div className={`pointer-events-auto max-w-full flex-col items-center gap-1.5 ${tucked ? "hidden md:flex" : "flex"}`}>
       <div className={`flex items-center gap-0.5 rounded-full p-1 ${glass}`}>
         {multi && (
           <button type="button" className={arrow} onClick={() => s.stepRoom(-1)} aria-label={t("prevRoom")} title={t("prevRoom")}>
@@ -79,6 +96,9 @@ export function RoomChip() {
             <ChevronRight className="size-4" />
           </button>
         )}
+        <button type="button" className={`${arrow} md:hidden`} onClick={() => setTucked(true)} aria-label={t("hideRoomBar")} title={t("hideRoomBar")}>
+          <ChevronUp className="size-4" />
+        </button>
       </div>
       {zone && (
         <div className="flex gap-1.5">
@@ -94,6 +114,7 @@ export function RoomChip() {
         </div>
       )}
     </div>
+    </>
   );
 }
 
