@@ -242,6 +242,35 @@ export function outlineRuns(walls: PlanWall[]): DimRun[] {
   return runs;
 }
 
+/** Size lines for one room: each side of its outline (collinear edges merged), with the normal pointing out of the room. */
+export function zoneRuns(zone: Zone): DimRun[] {
+  const poly = zone.polygon;
+  const runs: DimRun[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i];
+    const b = poly[(i + 1) % poly.length];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (len < EPS) continue;
+    let out: XZ = [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
+    const mx = (a[0] + b[0]) / 2 + out[0] * 0.05;
+    const mz = (a[1] + b[1]) / 2 + out[1] * 0.05;
+    if (pointInPolygon(mx, mz, poly)) out = [-out[0], -out[1]];
+    const last = runs[runs.length - 1];
+    if (last && last.b[0] === a[0] && last.b[1] === a[1] && Math.abs(last.out[0] - out[0]) < EPS && Math.abs(last.out[1] - out[1]) < EPS) last.b = b;
+    else runs.push({ a, b, out });
+  }
+  // The last side may continue the first.
+  if (runs.length > 1) {
+    const first = runs[0];
+    const last = runs[runs.length - 1];
+    if (last.b[0] === first.a[0] && last.b[1] === first.a[1] && Math.abs(last.out[0] - first.out[0]) < EPS && Math.abs(last.out[1] - first.out[1]) < EPS) {
+      first.a = last.a;
+      runs.pop();
+    }
+  }
+  return runs;
+}
+
 /** Solid parts of a wall along its length (doors and sliders cut through to the floor). */
 export function solidSpans(w: PlanWall): [number, number][] {
   const len = wallGeom(w).length;

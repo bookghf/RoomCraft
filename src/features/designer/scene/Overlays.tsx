@@ -6,7 +6,7 @@ import { useMemo, useRef, type ReactNode } from "react";
 import { BufferGeometry, Float32BufferAttribute, type Group } from "three";
 import { getCatalogItem } from "@/features/designer/content";
 import { doorwayBoxes, fixtureBox, wallBoxes, type Box } from "@/features/designer/lib/collision";
-import { doorSwings, swingPolygon } from "@/features/designer/lib/geometry";
+import { doorSwings, polygonBounds, swingPolygon, zoneRuns } from "@/features/designer/lib/geometry";
 import { distanceLines, cm, type P3 } from "@/features/designer/lib/measure";
 import { mergeItems } from "@/features/designer/lib/placement";
 import { useDesigner } from "@/features/designer/store";
@@ -143,9 +143,13 @@ export default function Overlays() {
   const drag = useDesigner((s) => s.drag);
   const selected = useDesigner((s) => s.selected);
   const measure = useDesigner((s) => s.measure);
-  const iso = useDesigner(isolatedZone);
+  const focusZone = useDesigner((s) => s.focusZone);
   const listOpen = useDesigner((s) => s.listOpen);
   if (!plan || !doc) return null;
+  // A focused room shows its own size; otherwise the outside of the whole home.
+  const focused = plan.zones.find((z) => z.id === focusZone);
+  const sizeRuns = focused ? zoneRuns(focused) : plan.outline;
+  const sizeBounds = focused ? polygonBounds(focused.polygon) : plan.bounds;
 
   const items = drag ? mergeItems(doc.items, drag.items) : doc.items;
   const ctx = { plan, ceiling: doc.ceiling, items };
@@ -183,8 +187,7 @@ export default function Overlays() {
         distanceLines(ctx, single.uid).map((l, i) => <DimLine key={`d${i}`} a={l.a} b={l.b} color="#0284c7" label={cm(l.d)} tone="blue" tick={0.04} />)}
 
       {measure.room &&
-        !iso &&
-        plan.outline.map((r, i) => {
+        sizeRuns.map((r, i) => {
           const off = 0.45;
           const a: P3 = [r.a[0] + r.out[0] * off, yLine, r.a[1] + r.out[1] * off];
           const b: P3 = [r.b[0] + r.out[0] * off, yLine, r.b[1] + r.out[1] * off];
@@ -192,10 +195,10 @@ export default function Overlays() {
           return <DimLine key={`r${i}`} a={a} b={b} color="#78716c" label={`${cm(len)}`} tone="light" tick={0.1} />;
         })}
 
-      {measure.room && !iso && (
+      {measure.room && (
         <group>
-          <Seg a={[plan.bounds.minX - 0.45, 0, plan.bounds.maxZ + 0.45]} b={[plan.bounds.minX - 0.45, doc.ceiling, plan.bounds.maxZ + 0.45]} color="#78716c" />
-          <Label position={[plan.bounds.minX - 0.45, doc.ceiling / 2, plan.bounds.maxZ + 0.45]} tone="light">
+          <Seg a={[sizeBounds.minX - 0.45, 0, sizeBounds.maxZ + 0.45]} b={[sizeBounds.minX - 0.45, doc.ceiling, sizeBounds.maxZ + 0.45]} color="#78716c" />
+          <Label position={[sizeBounds.minX - 0.45, doc.ceiling / 2, sizeBounds.maxZ + 0.45]} tone="light">
             {cm(doc.ceiling)}
           </Label>
         </group>
