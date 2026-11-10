@@ -108,7 +108,7 @@ export const showroomSpecs: PlanSpec[] = [
     wallColor: "#EDE8E0",
     openings: [
       { side: "front", type: "window", offset: 1.3, width: 1.4, height: 1.3, sill: 0.9 },
-      { side: "back", type: "door", offset: 0.3, width: 0.9, height: 2.1 },
+      { side: "back", type: "door", offset: 1.2, width: 0.9, height: 2.1 },
     ],
     items: [
       { itemId: "bed-linna-double", x: 2.95, z: 1.75, rot: -HALF },
@@ -193,7 +193,7 @@ export const showroomSpecs: PlanSpec[] = [
       { itemId: "chair-sit", x: 2.5, z: 2.5, rot: H },
       { itemId: "lamp-glow-pendant", x: 2.0, z: 1.8, rot: 0, colorId: "brass" },
       { itemId: "dresser-rau", x: 0.24, z: 2.0, rot: HALF, colorId: "walnut" },
-      { itemId: "plant-fiddle", x: 3.6, z: 3.2, rot: 0 },
+      { itemId: "plant-fiddle", x: 3.6, z: 0.4, rot: 0 },
       { itemId: "art-horizon", x: 0.015, z: 2.0, rot: HALF },
     ],
   }),

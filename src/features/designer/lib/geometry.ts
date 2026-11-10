@@ -269,3 +269,108 @@ export function clearPlanCache() {
 export function wallZones(w: PlanWall): string[] {
   return w.sides.filter((s): s is string => s !== null);
 }
+
+/** Walking space kept free in front of doors and sliders, and in front of windows for tall furniture. */
+export const PASS_DEPTH = 0.6;
+export const WINDOW_DEPTH = 0.3;
+/** Furniture may rise this far above a window sill before it counts as blocking the window. */
+export const WINDOW_ALLOWANCE = 0.3;
+
+/**
+ * The floor a hinged door sweeps when it opens. Doors swing into the room on their wall
+ * (the larger one for a wall between two rooms), hinged at the opening's start, so the leaf
+ * turns from along the wall (`leaf`) to straight into the room (`open`).
+ */
+export interface DoorSwing {
+  /** "<wallId>:<opening index>" */
+  id: string;
+  hinge: XZ;
+  leaf: XZ;
+  open: XZ;
+  radius: number;
+}
+
+/** Which side of a wall (+1 = +normal, -1 = -normal) a door swings into. */
+function swingSide(plan: Plan, w: PlanWall): 1 | -1 {
+  const area = (id: string | null) => {
+    const z = id ? plan.zones.find((zn) => zn.id === id) : undefined;
+    return z ? Math.abs(polygonArea(z.polygon)) : -1;
+  };
+  return area(w.sides[0]) >= area(w.sides[1]) ? 1 : -1;
+}
+
+export function doorSwings(plan: Plan): DoorSwing[] {
+  const out: DoorSwing[] = [];
+  for (const w of plan.walls) {
+    if (w.kind !== "solid") continue;
+    const g = wallGeom(w);
+    const sign = swingSide(plan, w);
+    const open: XZ = [g.normal[0] * sign, g.normal[1] * sign];
+    w.openings.forEach((o, i) => {
+      if (o.type !== "door") return;
+      const hinge: XZ = [w.a[0] + g.dir[0] * o.offset + open[0] * (WALL_T / 2), w.a[1] + g.dir[1] * o.offset + open[1] * (WALL_T / 2)];
+      out.push({ id: `${w.id}:${i}`, hinge, leaf: g.dir, open, radius: o.width });
+    });
+  }
+  return out;
+}
+
+/** Outline of a door swing: the hinge, then points along the arc from closed to fully open. */
+export function swingPolygon(s: DoorSwing, steps = 12): XZ[] {
+  const pts: XZ[] = [s.hinge];
+  for (let k = 0; k <= steps; k++) {
+    const a = (k / steps) * (Math.PI / 2);
+    const c = Math.cos(a), sn = Math.sin(a);
+    pts.push([s.hinge[0] + s.radius * (c * s.leaf[0] + sn * s.open[0]), s.hinge[1] + s.radius * (c * s.leaf[1] + sn * s.open[1])]);
+  }
+  return pts;
+}
+
+/** Space that furniture must keep clear of, as a convex floor outline plus a height range. */
+export interface Clearance {
+  /** "door:<wallId>:<i>", "slider:<wallId>:<i>" or "window:<wallId>:<i>" */
+  ref: string;
+  poly: XZ[];
+  y0: number;
+  y1: number;
+}
+
+/** Rectangle in front of an opening on one side of its wall, from `d0` to `d1` metres off the wall's centre line. */
+function frontRect(w: PlanWall, o: Opening, sign: number, d0: number, d1: number): XZ[] {
+  const g = wallGeom(w);
+  const n: XZ = [g.normal[0] * sign, g.normal[1] * sign];
+  const at = (u: number, d: number): XZ => [w.a[0] + g.dir[0] * u + n[0] * d, w.a[1] + g.dir[1] * u + n[1] * d];
+  return [at(o.offset, d0), at(o.offset + o.width, d0), at(o.offset + o.width, d1), at(o.offset, d1)];
+}
+
+/**
+ * Every space furniture must leave free: a door's swing plus a walkway on its other side,
+ * a walkway on both sides of a slider, and the space in front of a window above its sill
+ * (plus an allowance, so low furniture can still stand under it).
+ */
+export function clearances(plan: Plan, ceiling: number): Clearance[] {
+  const swings = new Map(doorSwings(plan).map((s) => [s.id, s]));
+  const out: Clearance[] = [];
+  for (const w of plan.walls) {
+    if (w.kind !== "solid") continue;
+    const sign = swingSide(plan, w);
+    const half = WALL_T / 2;
+    w.openings.forEach((o, i) => {
+      const id = `${w.id}:${i}`;
+      const top = openingTop(o, ceiling);
+      const sides = ([1, -1] as const).filter((sg) => w.sides[sg === 1 ? 0 : 1] !== null);
+      if (o.type === "door") {
+        const swing = swings.get(id)!;
+        out.push({ ref: `door:${id}`, poly: swingPolygon(swing), y0: 0, y1: top });
+        out.push({ ref: `door:${id}`, poly: frontRect(w, o, sign, 0, half), y0: 0, y1: top });
+        if (sides.includes(-sign as 1 | -1)) out.push({ ref: `door:${id}`, poly: frontRect(w, o, -sign, 0, half + PASS_DEPTH), y0: 0, y1: top });
+      } else if (o.type === "slider") {
+        for (const sg of sides) out.push({ ref: `slider:${id}`, poly: frontRect(w, o, sg, 0, half + PASS_DEPTH), y0: 0, y1: top });
+      } else {
+        const y0 = o.sill + WINDOW_ALLOWANCE;
+        if (y0 < top) for (const sg of sides) out.push({ ref: `window:${id}`, poly: frontRect(w, o, sg, 0, half + WINDOW_DEPTH), y0, y1: top });
+      }
+    });
+  }
+  return out;
+}

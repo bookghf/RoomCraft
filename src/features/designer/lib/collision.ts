@@ -1,7 +1,7 @@
 import { getCatalogItem } from "@/features/designer/content";
 import type { CatalogItem, DItem, Fixture, Plan, PlanWall } from "@/features/designer/types";
 import { rectsOverlap, type Rect2 } from "@/features/designer/lib/math";
-import { openingTop, pointInPolygon, RAILING_H, solidSpans, WALL_T, wallGeom } from "./geometry";
+import { clearances, openingTop, pointInPolygon, RAILING_H, solidSpans, WALL_T, wallGeom } from "./geometry";
 
 const EPS = 1e-3;
 
@@ -138,11 +138,53 @@ function blocksOpening(plan: Plan, it: DItem, cat: CatalogItem, ceiling: number)
   });
 }
 
+/** Separating-axis test between a box footprint and a convex polygon. Touching does not count. */
+function boxHitsPolygon(b: Box, poly: [number, number][]): boolean {
+  const rect = boxCorners(b);
+  const axes: [number, number][] = [];
+  for (const shape of [rect, poly]) {
+    for (let i = 0; i < shape.length; i++) {
+      const p = shape[i];
+      const q = shape[(i + 1) % shape.length];
+      const ex = q[0] - p[0], ez = q[1] - p[1];
+      const len = Math.hypot(ex, ez);
+      if (len > EPS) axes.push([-ez / len, ex / len]);
+    }
+  }
+  for (const [ax, az] of axes) {
+    let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+    for (const [x, z] of rect) {
+      const d = x * ax + z * az;
+      amin = Math.min(amin, d);
+      amax = Math.max(amax, d);
+    }
+    for (const [x, z] of poly) {
+      const d = x * ax + z * az;
+      bmin = Math.min(bmin, d);
+      bmax = Math.max(bmax, d);
+    }
+    if (amax <= bmin + EPS || bmax <= amin + EPS) return false;
+  }
+  return true;
+}
+
+/** Opening clearances (door swings, walkways, windows) an item's box would block. */
+export function clearanceBlockers(plan: Plan, ceiling: number, b: Box): string[] {
+  const refs = new Set<string>();
+  for (const c of clearances(plan, ceiling)) {
+    if (b.y0 >= c.y1 - EPS || b.y1 <= c.y0 + EPS) continue;
+    if (boxHitsPolygon(b, c.poly)) refs.add(c.ref);
+  }
+  return [...refs];
+}
+
 /**
  * Check a set of moved items (new states) against walls, fixtures, every other item and the plan outline.
  * Flat items (rugs) are only blocked by walls; nothing is blocked by a rug.
+ * Items may not block a door's swing, the walkway at a door or slider, or a window (see `clearances`), unless `doors` is false (whole-design checks,
+ * so designs made before the rule still accept ceiling and size changes).
  */
-export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
+export function checkItems(ctx: Ctx, moved: DItem[], { doors = true }: { doors?: boolean } = {}): CheckResult {
   const movedIds = new Set(moved.map((m) => m.uid));
   const obstacles = [...staticObstacles(ctx.plan, ctx.ceiling), ...itemObstacles(ctx.items, movedIds)];
   const blockers = new Set<string>();
@@ -158,6 +200,13 @@ export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
       if (it.wallId) blockers.add(`wall:${it.wallId}`);
     }
     if (box.y1 > ctx.ceiling + EPS) valid = false;
+    // Wall items are already kept off openings by blocksOpening.
+    if (doors && !cat.flat && cat.mount !== "wall") {
+      for (const ref of clearanceBlockers(ctx.plan, ctx.ceiling, box)) {
+        valid = false;
+        blockers.add(ref);
+      }
+    }
     for (const o of obstacles) {
       if (o.flat) continue;
       if (cat.flat && !o.ref.startsWith("wall:")) continue;
