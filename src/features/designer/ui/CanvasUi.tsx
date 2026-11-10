@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Compass,
   Copy,
   Ellipsis,
   Eye,
@@ -40,6 +41,7 @@ import { redo, t as translateNow, undo, useDesigner, useTemporal } from "@/featu
 import { toast } from "@/features/designer/ui/Toast";
 import { ItemIcon } from "./CatalogPanel";
 import { Btn, CloseButton, glass, Modal, RoundButton, Swatches, Toggle } from "./common";
+import { FengShuiDialog } from "./FengShuiDialog";
 
 export function TopLeftTools() {
   const t = useT();
@@ -136,6 +138,7 @@ export function Shortcuts() {
       <RoundButton icon={Lightbulb} label={t("lights")} active={lights} onClick={() => s.patch({ lights: !lights })} />
       <RoundButton icon={Share2} label={t("share")} active={shareOpen} onClick={() => s.patch({ shareOpen: !shareOpen, sizeOpen: false, moreOpen: false })} />
       <RoundButton icon={List} label={t("items")} active={listOpen} onClick={() => s.patch({ listOpen: !listOpen, moreOpen: false })} />
+      <RoundButton icon={Compass} label={t("fengShuiCalc")} onClick={() => s.patch({ dialog: "fengshui", moreOpen: false })} />
     </>
   );
 
@@ -477,6 +480,7 @@ export function Dialogs() {
   const dialog = useDesigner((s) => s.dialog);
   const patch = useDesigner((s) => s.patch);
   if (dialog === "save") return <SaveDialog />;
+  if (dialog === "fengshui") return <FengShuiDialog />;
   if (dialog === "reset") {
     return (
       <Modal
