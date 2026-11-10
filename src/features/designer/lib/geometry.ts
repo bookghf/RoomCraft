@@ -1,4 +1,4 @@
-import type { DimRun, Opening, OpeningSpec, Plan, PlanSpec, PlanWall, XZ, Zone } from "@/features/designer/types";
+import type { DimRun, DoorSwingSpec, Opening, OpeningSpec, OpeningType, Plan, PlanSpec, PlanWall, XZ, Zone } from "@/features/designer/types";
 
 export const WALL_T = 0.12;
 export const RAILING_H = 1.05;
@@ -89,11 +89,19 @@ function onSegment(p: XZ, a: XZ, b: XZ, tol = 0.02): number | null {
   return along;
 }
 
+/** Split a plan opening type like "door:out:right" into its kind and door swing. */
+export function parseOpeningType(type: string): { type: OpeningType; swing?: DoorSwingSpec } {
+  const [base, dir, hinge] = type.split(":");
+  if (base === "door" && (dir === "in" || dir === "out") && (hinge === "left" || hinge === "right")) return { type: "door", swing: { dir, hinge } };
+  return { type: base as OpeningType };
+}
+
 function makeOpening(spec: OpeningSpec, along: number, length: number): Opening {
+  const { type, swing } = parseOpeningType(spec.type);
   const width = Math.min(spec.width, length - 0.1);
   const offset = Math.min(Math.max(along - width / 2, 0.05), length - width - 0.05);
-  if (spec.type === "window") return { type: "window", offset, width, sill: spec.sill ?? 0.9, height: spec.height ?? 1.2 };
-  return { type: spec.type, offset, width, sill: 0, height: spec.height ?? (spec.type === "slider" ? 2.2 : DOOR_H) };
+  if (type === "window") return { type: "window", offset, width, sill: spec.sill ?? 0.9, height: spec.height ?? 1.2 };
+  return { type, ...(swing && { swing }), offset, width, sill: 0, height: spec.height ?? (type === "slider" ? 2.2 : DOOR_H) };
 }
 
 interface RawSeg {
@@ -271,7 +279,7 @@ export function wallZones(w: PlanWall): string[] {
 }
 
 /**
- * The floor a hinged door sweeps when it opens (drawn on the floor; it does not block furniture). Doors swing into the room on their wall
+ * The floor a hinged door sweeps when it opens; furniture may not stand in it. Doors swing into the room on their wall
  * (the larger one for a wall between two rooms), hinged at the opening's start, so the leaf
  * turns from along the wall (`leaf`) to straight into the room (`open`).
  */
@@ -299,11 +307,18 @@ export function doorSwings(plan: Plan): DoorSwing[] {
     if (w.kind !== "solid") continue;
     const g = wallGeom(w);
     const sign = swingSide(plan, w);
-    const open: XZ = [g.normal[0] * sign, g.normal[1] * sign];
+    const inward: XZ = [g.normal[0] * sign, g.normal[1] * sign];
+    // Left, for someone in the larger room facing the wall (X right, Z down).
+    const left: XZ = [-inward[1], inward[0]];
     w.openings.forEach((o, i) => {
       if (o.type !== "door") return;
-      const hinge: XZ = [w.a[0] + g.dir[0] * o.offset + open[0] * (WALL_T / 2), w.a[1] + g.dir[1] * o.offset + open[1] * (WALL_T / 2)];
-      out.push({ id: `${w.id}:${i}`, hinge, leaf: g.dir, open, radius: o.width });
+      const open: XZ = o.swing?.dir === "out" ? [-inward[0], -inward[1]] : inward;
+      const mid: XZ = [w.a[0] + g.dir[0] * (o.offset + o.width / 2), w.a[1] + g.dir[1] * (o.offset + o.width / 2)];
+      // Without a stored swing the hinge sits at the wall start, as before.
+      const toHinge: XZ = !o.swing ? [-g.dir[0], -g.dir[1]] : o.swing.hinge === "left" ? left : [-left[0], -left[1]];
+      const hw = o.width / 2;
+      const hinge: XZ = [mid[0] + toHinge[0] * hw + open[0] * (WALL_T / 2), mid[1] + toHinge[1] * hw + open[1] * (WALL_T / 2)];
+      out.push({ id: `${w.id}:${i}`, hinge, leaf: [-toHinge[0], -toHinge[1]], open, radius: o.width });
     });
   }
   return out;

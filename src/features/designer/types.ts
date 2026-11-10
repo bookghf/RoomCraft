@@ -23,8 +23,17 @@ export interface Zone {
 
 export type OpeningType = "door" | "window" | "slider";
 
+/** Which way a door opens: "in" = into the larger room on its wall; hinge side as seen from that room, facing the door. */
+export interface DoorSwingSpec {
+  dir: "in" | "out";
+  hinge: "left" | "right";
+}
+
+/** Plan files store a door's swing in its type ("door:out:right"); a plain "door" keeps the default swing. */
+export type OpeningSpecType = OpeningType | `door:${DoorSwingSpec["dir"]}:${DoorSwingSpec["hinge"]}`;
+
 export interface OpeningSpec {
-  type: OpeningType;
+  type: OpeningSpecType;
   /** A point on the wall centre-line at the middle of the opening. */
   at: XZ;
   width: number;
@@ -77,6 +86,8 @@ export interface Showroom {
 
 export interface Opening {
   type: OpeningType;
+  /** Set for doors whose plan names a swing; otherwise doors swing in, hinged at the wall start. */
+  swing?: DoorSwingSpec;
   offset: number; // metres from wall start
   width: number;
   height: number;

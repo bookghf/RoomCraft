@@ -1,7 +1,7 @@
 import { getCatalogItem } from "@/features/designer/content";
 import type { CatalogItem, DItem, Fixture, Plan, PlanWall } from "@/features/designer/types";
 import { rectsOverlap, type Rect2 } from "@/features/designer/lib/math";
-import { openingTop, pointInPolygon, RAILING_H, solidSpans, WALL_T, wallGeom } from "./geometry";
+import { doorSwings, openingTop, pointInPolygon, RAILING_H, solidSpans, swingPolygon, WALL_T, wallGeom } from "./geometry";
 
 const EPS = 1e-3;
 
@@ -160,11 +160,52 @@ function blocksOpening(plan: Plan, it: DItem, cat: CatalogItem, ceiling: number)
   });
 }
 
+/** Separating-axis test between a box footprint and a convex polygon. Touching does not count. */
+function boxHitsPolygon(b: Box, poly: [number, number][]): boolean {
+  const rect = boxCorners(b);
+  for (const shape of [rect, poly]) {
+    for (let i = 0; i < shape.length; i++) {
+      const p = shape[i];
+      const q = shape[(i + 1) % shape.length];
+      const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (len < EPS) continue;
+      const ax = -(q[1] - p[1]) / len, az = (q[0] - p[0]) / len;
+      let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
+      for (const [x, z] of rect) {
+        const d = x * ax + z * az;
+        amin = Math.min(amin, d);
+        amax = Math.max(amax, d);
+      }
+      for (const [x, z] of poly) {
+        const d = x * ax + z * az;
+        bmin = Math.min(bmin, d);
+        bmax = Math.max(bmax, d);
+      }
+      if (amax <= bmin + EPS || bmax <= amin + EPS) return false;
+    }
+  }
+  return true;
+}
+
+/** Door swings ("door:<wallId>:<index>") an item's box would stand in. */
+export function swingBlockers(plan: Plan, ceiling: number, b: Box): string[] {
+  const out: string[] = [];
+  for (const s of doorSwings(plan)) {
+    const [wallId, i] = s.id.split(":");
+    const o = plan.walls.find((w) => w.id === wallId)?.openings[Number(i)];
+    if (o && b.y0 >= openingTop(o, ceiling) - EPS) continue;
+    if (boxHitsPolygon(b, swingPolygon(s))) out.push(`door:${s.id}`);
+  }
+  return out;
+}
+
 /**
  * Check a set of moved items (new states) against walls, fixtures, every other item and the plan outline.
  * Flat items (rugs) are only blocked by walls and doorways; nothing is blocked by a rug.
+ * Furniture may not stand in a door's swing, unless `doors` is false (whole-design checks, so designs
+ * made before the rule still accept ceiling and size changes).
  */
-export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
+export function checkItems(ctx: Ctx, moved: DItem[], { doors = true }: { doors?: boolean } = {}): CheckResult {
   const movedIds = new Set(moved.map((m) => m.uid));
   const obstacles = [...staticObstacles(ctx.plan, ctx.ceiling), ...itemObstacles(ctx.items, movedIds)];
   const blockers = new Set<string>();
@@ -180,6 +221,12 @@ export function checkItems(ctx: Ctx, moved: DItem[]): CheckResult {
       if (it.wallId) blockers.add(`wall:${it.wallId}`);
     }
     if (box.y1 > ctx.ceiling + EPS) valid = false;
+    if (doors && !cat.flat && cat.mount !== "wall") {
+      for (const ref of swingBlockers(ctx.plan, ctx.ceiling, box)) {
+        valid = false;
+        blockers.add(ref);
+      }
+    }
     if (cat.mount !== "wall") {
       for (const o of doorwayBoxes(ctx.plan, ctx.ceiling)) {
         if (boxesOverlap(box, o.box)) {
