@@ -90,8 +90,8 @@ function FloorArea({ poly, color, opacity, y = 0.006 }: { poly: XZ[]; color: str
   );
 }
 
-/** Door swing arcs, drawn like on a floor plan so users can see where doors open. */
-function DoorSwingMarks() {
+/** Door swing arcs, drawn like on a floor plan; a swing an item is blocked by turns red. */
+function DoorSwingMarks({ highlight }: { highlight: Set<string> }) {
   const plan = useDesigner((s) => s.plan);
   const iso = useDesigner(isolatedZone);
   if (!plan) return null;
@@ -101,13 +101,14 @@ function DoorSwingMarks() {
         .filter((sw) => zoneVisible(plan, iso, sw.hinge[0] + sw.open[0] * 0.1, sw.hinge[1] + sw.open[1] * 0.1))
         .map((sw) => {
           const poly = swingPolygon(sw, 24);
+          const hot = highlight.has(`door:${sw.id}`);
           const y = 0.008;
           const end: P3 = [sw.hinge[0] + sw.open[0] * sw.radius, y, sw.hinge[1] + sw.open[1] * sw.radius];
           return (
             <group key={sw.id}>
-              <FloorArea poly={poly} color="#8c7f6d" opacity={0.08} />
-              <Line points={poly.slice(1).map((p) => [p[0], y, p[1]] as P3)} color="#8c7f6d" lineWidth={1.2} dashed dashSize={0.05} gapSize={0.035} />
-              <Line points={[[sw.hinge[0], y, sw.hinge[1]], end]} color="#6b6050" lineWidth={2} />
+              <FloorArea poly={poly} color={hot ? "#e5484d" : "#8c7f6d"} opacity={hot ? 0.3 : 0.08} />
+              <Line points={poly.slice(1).map((p) => [p[0], y, p[1]] as P3)} color={hot ? "#e5484d" : "#8c7f6d"} lineWidth={1.2} dashed dashSize={0.05} gapSize={0.035} />
+              <Line points={[[sw.hinge[0], y, sw.hinge[1]], end]} color={hot ? "#e5484d" : "#6b6050"} lineWidth={2} />
             </group>
           );
         })}
@@ -168,7 +169,7 @@ export default function Overlays() {
 
   return (
     <OverlayGroup>
-      <DoorSwingMarks />
+      <DoorSwingMarks highlight={new Set(drag?.blockers ?? [])} />
       {blockerBoxes.map((b, i) => (
         <BoxOutline key={i} box={b} color="#e5484d" />
       ))}

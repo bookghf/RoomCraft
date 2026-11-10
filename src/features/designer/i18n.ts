@@ -61,6 +61,7 @@ const dict = {
   aWall: ["a wall", "ผนัง", "墙"],
   aFixture: ["a built-in fixture", "ของติดตั้งในห้อง", "固定设施"],
   aDoorway: ["a doorway", "ช่องประตู", "门洞"],
+  aDoorSwing: ["the door's opening space", "พื้นที่เปิดประตู", "开门空间"],
   rotateBlocked: ["Can't turn — something is in the way", "หมุนไม่ได้ มีของขวางอยู่", "无法旋转——有东西挡住"],
   moveBlocked: ["Can't move — something is in the way", "เลื่อนไม่ได้ มีของขวางอยู่", "无法移动——有东西挡住"],
   lockedToast: ["This item is locked", "สินค้านี้ถูกล็อก", "此物品已锁定"],
