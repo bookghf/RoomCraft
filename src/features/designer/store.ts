@@ -140,9 +140,6 @@ export function contentKey(doc: DesignDoc): string {
 function describeBlocker(ref: string): string {
   if (ref.startsWith("wall:")) return t("aWall");
   if (ref.startsWith("fixture:")) return t("aFixture");
-  if (ref.startsWith("door:")) return t("aDoorSwing");
-  if (ref.startsWith("slider:")) return t("aSliderSpace");
-  if (ref.startsWith("window:")) return t("aWindow");
   const uid = ref.slice(5);
   const it = useDesigner.getState().doc?.items.find((i) => i.uid === uid);
   const cat = it && getCatalogItem(it.itemId);
@@ -408,7 +405,7 @@ export const useDesigner = create<DesignerState>()(
         if (ceiling === doc.ceiling) return true;
         const ctx: Ctx = { plan, ceiling, items: doc.items };
         const items = reseatForCeiling(ctx, doc.items);
-        const r = checkItems({ ...ctx, items }, items, { doors: false });
+        const r = checkItems({ ...ctx, items }, items);
         if (!r.valid) {
           toast(t("ceilingBlocked"));
           buzz([30, 40, 30]);
@@ -456,7 +453,7 @@ export const useDesigner = create<DesignerState>()(
           const [sx, sz] = shiftOf(it);
           return { ...it, x: it.x + sx, z: it.z + sz };
         });
-        const r = checkItems({ ...ctx, items }, items, { doors: false });
+        const r = checkItems({ ...ctx, items }, items);
         if (!r.valid) {
           toast(t("shrinkBlocked"));
           buzz([30, 40, 30]);
