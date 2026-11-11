@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Copy, EllipsisVertical, LayoutGrid, Pencil, Star, Trash2, X } from "lucide-react";
+import { Clock, Copy, EllipsisVertical, LayoutGrid, Pencil, Sofa, Star, Trash2, X } from "lucide-react";
 import { nanoid } from "nanoid";
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
@@ -15,7 +15,7 @@ import { Btn, Modal } from "./ui/common";
 import LangSwitch from "./ui/LangSwitch";
 import PlanThumbnail from "./ui/PlanThumbnail";
 
-type Tab = "plans" | "recent" | "saved";
+type Tab = "plans" | "showrooms" | "recent" | "saved";
 
 /** Saved and Recent lists from browser storage; null during server rendering. */
 let listsCache: { saved: DesignDoc[]; recent: RecentEntry[] } | null = null;
@@ -102,6 +102,7 @@ export default function DesignerHome() {
   const planName = (id: string) => tx(getPlanSpec(id)?.name, lang);
   const tabs: { id: Tab; label: string; icon: typeof LayoutGrid; count?: number }[] = [
     { id: "plans", label: t("plans"), icon: LayoutGrid },
+    { id: "showrooms", label: t("showrooms"), icon: Sofa },
     { id: "recent", label: t("recent"), icon: Clock, count: recent?.length },
     { id: "saved", label: t("saved"), icon: Star, count: saved?.length },
   ];
@@ -124,7 +125,7 @@ export default function DesignerHome() {
       </div>
 
       <div className="sticky top-0 z-10 -mx-4 mt-6 border-b border-line bg-background/90 px-4 backdrop-blur sm:mx-0 sm:px-0" role="tablist">
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto pb-px [scrollbar-width:none]">
           {tabs.map(({ id, label, icon: Icon, count }) => (
             <button
               key={id}
@@ -132,7 +133,7 @@ export default function DesignerHome() {
               role="tab"
               aria-selected={tab === id}
               onClick={() => setTab(id)}
-              className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium transition ${tab === id ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
+              className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3 text-sm font-medium transition ${tab === id ? "border-foreground text-foreground" : "border-transparent text-muted hover:text-foreground"}`}
             >
               <Icon className="size-4" />
               {label}
@@ -152,6 +153,11 @@ export default function DesignerHome() {
               return <Card key={p.id} href={designUrl(p.id)} doc={doc} title={tx(p.name, lang)} subtitle={`${sub} · ${p.zones.length > 1 ? p.zones.map((z) => tx(z.name, lang)).join(", ") : tx(p.zones[0].name, lang)}`} />;
             })}
           </div>
+        </>
+      )}
+
+      {tab === "showrooms" && (
+        <>
           <SectionTitle title={t("showrooms")} blurb={t("showroomsBlurb")} />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {showroomSpecs().map((p) => {
