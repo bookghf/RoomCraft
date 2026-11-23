@@ -178,7 +178,7 @@ function ItemCard({ item, name, price, onPick }: { item: CatalogItem; name: stri
       <div className="relative flex aspect-[4/3] items-center justify-center" style={{ background: item.thumbnailUrl ? "#fff" : `linear-gradient(135deg, ${c1}55, ${c2}aa)` }}>
         <ItemIcon item={item} className={`${item.thumbnailUrl ? "absolute inset-0 size-full" : "size-8 text-stone-700/70"} transition group-hover:scale-110`} strokeWidth={1.5} />
         <div className="absolute bottom-1.5 left-1.5 flex gap-1">
-          {item.colors.map((c) => (
+          {!item.modelUrl && item.colors.map((c) => (
             <span key={c.id} className="size-2.5 rounded-full ring-1 ring-white" style={{ background: c.hex }} />
           ))}
         </div>

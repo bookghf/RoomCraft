@@ -53,6 +53,11 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return byId.get(id);
 }
 
+/** Items drawn from an uploaded .glb keep the model's own colours: customers can't pick one. */
+export function hasColorChoice(item: CatalogItem | undefined): boolean {
+  return !!item && !item.modelUrl && item.colors.length > 1;
+}
+
 export function colorOf(item: CatalogItem | undefined, colorId: string | undefined): string {
   return item?.colors.find((c) => c.id === colorId)?.hex ?? item?.colors[0]?.hex ?? "#bdbdbd";
 }
