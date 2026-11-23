@@ -4,6 +4,7 @@ import { Edges } from "@react-three/drei";
 import type { ReactNode } from "react";
 import type { CatalogItem, Fixture } from "@/features/designer/types";
 import { GlbModel } from "./GlbModel";
+import { parseColorMaterials } from "./colorMaterials";
 import { Ball, Block, Cyl, Legs, shade } from "./parts";
 import { ShapeModel, type ShapeKey } from "./shapes";
 
@@ -357,7 +358,7 @@ const templates: Record<string, (p: P) => ReactNode> = {
 export function DesignerModel({ item, color, glow = 0 }: { item: CatalogItem; color: string; glow?: number }) {
   const { w, d, h } = item.size;
   const params = item.model.params ?? {};
-  if (item.modelUrl) return <GlbModel url={item.modelUrl} w={w} d={d} h={h} />;
+  if (item.modelUrl) return <GlbModel url={item.modelUrl} w={w} d={d} h={h} color={color} materials={parseColorMaterials(params)} />;
   if (item.model.template === "shape") return <ShapeModel shape={params.shape as ShapeKey} w={w} d={d} h={h} color={color} />;
   const T = templates[item.model.template];
   if (!T) return <Placeholder w={w} d={d} h={h} />;
