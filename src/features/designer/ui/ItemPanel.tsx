@@ -2,7 +2,7 @@
 
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ChevronsDown, ChevronsUp, Copy, Lock, LockOpen, RotateCcw, RotateCw, Trash2 } from "lucide-react";
 import { useRef } from "react";
-import { formatPrice, getCatalogItem } from "@/features/designer/content";
+import { formatPrice, getCatalogItem, hasColorChoice } from "@/features/designer/content";
 import { tx, useLang, useT } from "@/features/designer/i18n";
 import { nudgeVector } from "@/features/designer/scene/interaction";
 import { beginGesture, buzz, endGesture, useDesigner } from "@/features/designer/store";
@@ -178,7 +178,7 @@ export default function ItemPanel() {
           <span className="inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-100 text-stone-600">
             <ItemIcon item={cat} className={cat?.thumbnailUrl ? "size-full" : "size-5"} />
           </span>
-          {cat && cat.colors.length > 1 && <Swatches colors={cat.colors.map((c) => ({ id: c.id, hex: c.hex, label: tx(c.name, lang) }))} value={it.colorId} onPick={(id) => setColor(it.uid, id)} />}
+          {hasColorChoice(cat) && cat && <Swatches colors={cat.colors.map((c) => ({ id: c.id, hex: c.hex, label: tx(c.name, lang) }))} value={it.colorId} onPick={(id) => setColor(it.uid, id)} />}
           {cat && (
             <span className="ml-auto text-right">
               <span className="block text-sm font-semibold tabular-nums text-stone-900">{formatPrice(cat.price, lang)}</span>

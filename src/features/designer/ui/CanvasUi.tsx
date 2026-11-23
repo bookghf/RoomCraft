@@ -33,7 +33,7 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { colorOf, formatPrice, getCatalogItem, totalPrice } from "@/features/designer/content";
+import { colorOf, formatPrice, getCatalogItem, hasColorChoice, totalPrice } from "@/features/designer/content";
 import { tx, useLang, useLangStore, useT } from "@/features/designer/i18n";
 import { capturePicture, sharePicture } from "@/features/designer/scene/capture";
 import { planTitle, saveDesign, shareLink } from "@/features/designer/session";
@@ -309,7 +309,7 @@ export function ItemList() {
                   className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-sm ${selected.includes(it.uid) ? "bg-amber-100" : "hover:bg-stone-100"}`}
                 >
                   <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-stone-900">{i + 1}</span>
-                  <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: colorOf(cat, it.colorId) }} />
+                  {!cat?.modelUrl && <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: colorOf(cat, it.colorId) }} />}
                   <ItemIcon item={cat} className="size-4 shrink-0 text-stone-500" />
                   <span className="min-w-0 flex-1 truncate text-stone-800">{cat ? tx(cat.name, lang) : t("unknownItem")}</span>
                   {it.locked && <Lock className="size-3.5 text-stone-400" />}
@@ -341,8 +341,10 @@ function ShoppingLines() {
   const s = useDesigner.getState();
   const lines = new Map<string, { itemId: string; colorId: string; uids: string[] }>();
   for (const it of items) {
-    const key = `${it.itemId}:${it.colorId}`;
-    const line = lines.get(key) ?? { itemId: it.itemId, colorId: it.colorId, uids: [] };
+    // .glb items have no colour choice, so all copies are one line.
+    const colorId = getCatalogItem(it.itemId)?.modelUrl ? "" : it.colorId;
+    const key = `${it.itemId}:${colorId}`;
+    const line = lines.get(key) ?? { itemId: it.itemId, colorId, uids: [] };
     line.uids.push(it.uid);
     lines.set(key, line);
   }
@@ -351,7 +353,7 @@ function ShoppingLines() {
       {[...lines.values()].map((l) => {
         const cat = getCatalogItem(l.itemId);
         if (!cat) return null;
-        const color = cat.colors.find((c) => c.id === l.colorId) ?? cat.colors[0];
+        const color = cat.modelUrl ? undefined : (cat.colors.find((c) => c.id === l.colorId) ?? cat.colors[0]);
         return (
           <li key={`${l.itemId}:${l.colorId}`}>
             <button
@@ -362,7 +364,7 @@ function ShoppingLines() {
               }}
               className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-sm hover:bg-stone-100"
             >
-              <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: color?.hex }} />
+              {color && <span className="size-3 shrink-0 rounded-full ring-1 ring-black/10" style={{ background: color.hex }} />}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-stone-800">{tx(cat.name, lang)}</span>
                 <span className="block truncate text-[11px] text-stone-500">
@@ -412,7 +414,7 @@ export function ContextMenu() {
         <p className="min-w-0 flex-1 truncate text-sm font-semibold text-stone-900">{cat ? tx(cat.name, lang) : t("unknownItem")}</p>
         <CloseButton onClick={close} />
       </div>
-      {cat && cat.colors.length > 1 && (
+      {cat && hasColorChoice(cat) && (
         <div className="px-2 pb-2">
           <Swatches size="sm" colors={cat.colors.map((c) => ({ id: c.id, hex: c.hex, label: tx(c.name, lang) }))} value={it.colorId} onPick={(id) => s.setColor(it.uid, id)} />
         </div>
