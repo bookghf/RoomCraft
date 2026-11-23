@@ -64,7 +64,8 @@ interface PlanDetail extends PlanSummary {
  */
 export async function loadContent(): Promise<DesignerContent> {
   "use cache";
-  cacheLife("minutes");
+  // Published catalog changes show within about a minute.
+  cacheLife({ stale: 60, revalidate: 60, expire: 3600 });
   const [catalog, plans, roomTypes] = await Promise.all([
     get<{ version: string; categories: { id: Category; name: Text }[]; items: CatalogItem[] }>("/v1/catalog"),
     get<PlanSummary[]>("/v1/plans"),
