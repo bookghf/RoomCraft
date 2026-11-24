@@ -95,3 +95,35 @@ export function Legs({ w, d, h, inset = 0.05, r = 0.02, color, square }: { w: nu
     </>
   );
 }
+
+// ---- Reading template options (catalog item model.params), with safe fallbacks ----
+
+export type Params = Record<string, number | string | boolean>;
+
+/** A number option, clamped to [min, max]; `fallback` when missing or not a number. */
+export function num(p: Params, key: string, fallback: number, min: number, max: number): number {
+  const n = p[key] === undefined || p[key] === "" ? NaN : Number(p[key]);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
+
+/** A whole-number option, clamped to [min, max]. */
+export function count(p: Params, key: string, fallback: number, min: number, max: number): number {
+  return Math.round(num(p, key, fallback, min, max));
+}
+
+/** An on/off option. */
+export function flag(p: Params, key: string, fallback: boolean): boolean {
+  const v = p[key];
+  return v === undefined ? fallback : v === true || v === "true" || v === 1;
+}
+
+/** One of a fixed set of choices. */
+export function choice<T extends string>(p: Params, key: string, choices: readonly T[], fallback: T): T {
+  return choices.includes(p[key] as T) ? (p[key] as T) : fallback;
+}
+
+/** A #rrggbb colour option. */
+export function hex(p: Params, key: string, fallback: string): string {
+  const v = p[key];
+  return typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v) ? v : fallback;
+}
