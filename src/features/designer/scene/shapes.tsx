@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Ball, Block, Cyl, Legs, mix, rand, shade } from "./parts";
+import { Ball, Block, Cyl, Legs, choice, count, flag, hex, mix, num, rand, shade, type Params } from "./parts";
 
 /** Procedural furniture shapes, built from three.js primitives (no third-party models). */
 export type ShapeKey =
@@ -30,6 +30,8 @@ interface ShapeProps {
   d: number;
   h: number;
   c: string;
+  /** Options from the catalog item's model.params. Every option has a default, so {} draws the standard look. */
+  p: Params;
 }
 
 const LINEN = "#f4f1eb";
@@ -38,14 +40,19 @@ const METAL = "#2b2b2b";
 const SHADE_FABRIC = "#f3ede2";
 const WARM = "#ffd9a0";
 
-function Bed({ w, d, h, c }: ShapeProps) {
-  const pillows = w > 1.2 ? 2 : 1;
-  const pw = (w - 0.2) / pillows - 0.05;
-  const textile = mix(c, LINEN, 0.75);
+function Bed({ w, d, h, c, p }: ShapeProps) {
+  const pillows = count(p, "pillows", w > 1.2 ? 2 : 1, 0, 4);
+  const legs = flag(p, "legs", true);
+  const pw = pillows ? (w - 0.2) / pillows - 0.05 : 0;
+  const textile = hex(p, "bedding", mix(c, LINEN, 0.75));
   return (
     <>
-      <Legs w={w} d={d} h={0.08} inset={0.06} r={0.025} color={shade(c, -0.15)} />
-      <Block size={[w, 0.22, d]} position={[0, 0.19, 0]} radius={0.02} color={c} />
+      {legs && <Legs w={w} d={d} h={0.08} inset={0.06} r={0.025} color={hex(p, "accent", shade(c, -0.15))} />}
+      {legs ? (
+        <Block size={[w, 0.22, d]} position={[0, 0.19, 0]} radius={0.02} color={c} />
+      ) : (
+        <Block size={[w, 0.3, d]} position={[0, 0.15, 0]} radius={0.02} color={c} />
+      )}
       <Block size={[w, h, 0.07]} position={[0, h / 2, -d / 2 + 0.035]} radius={0.025} color={c} />
       <Block size={[w - 0.06, 0.2, d - 0.1]} position={[0, 0.4, 0.03]} radius={0.05} color={LINEN} roughness={0.95} />
       <Block size={[w + 0.01, 0.1, d * 0.62]} position={[0, 0.47, d / 2 - d * 0.31 + 0.005]} radius={0.04} color={textile} roughness={1} />
@@ -63,20 +70,27 @@ function Bed({ w, d, h, c }: ShapeProps) {
   );
 }
 
-function Sofa({ w, d, h, c, seats }: ShapeProps & { seats?: number }) {
-  const armW = seats === 1 ? 0.14 : 0.16;
-  const n = seats ?? (w > 1.8 ? 3 : 2);
+function Sofa({ w, d, h, c, p, seats }: ShapeProps & { seats?: number }) {
+  const arms = flag(p, "arms", true);
+  const legs = flag(p, "legs", true);
+  const armW = arms ? (seats === 1 ? 0.14 : 0.16) : 0;
+  const n = count(p, "seats", seats ?? (w > 1.8 ? 3 : 2), 1, 6);
   const inner = w - armW * 2;
   const cw = inner / n - 0.012;
-  const cushion = shade(c, 0.03);
+  const cushion = hex(p, "cushions", shade(c, 0.03));
   return (
     <>
-      <Legs w={w} d={d} h={0.08} inset={0.07} r={0.022} color={DARK_WOOD} />
-      <Block size={[w, 0.3, d]} position={[0, 0.23, 0]} radius={0.03} color={c} roughness={0.95} />
+      {legs && <Legs w={w} d={d} h={0.08} inset={0.07} r={0.022} color={hex(p, "accent", DARK_WOOD)} />}
+      {legs ? (
+        <Block size={[w, 0.3, d]} position={[0, 0.23, 0]} radius={0.03} color={c} roughness={0.95} />
+      ) : (
+        <Block size={[w, 0.38, d]} position={[0, 0.19, 0]} radius={0.03} color={c} roughness={0.95} />
+      )}
       <Block size={[w, h - 0.08, 0.2]} position={[0, 0.08 + (h - 0.08) / 2, -d / 2 + 0.1]} radius={0.05} color={c} roughness={0.95} />
-      {[-1, 1].map((s) => (
-        <Block key={s} size={[armW, 0.52, d]} position={[s * (w / 2 - armW / 2), 0.08 + 0.26, 0]} radius={0.06} color={c} roughness={0.95} />
-      ))}
+      {arms &&
+        [-1, 1].map((s) => (
+          <Block key={s} size={[armW, 0.52, d]} position={[s * (w / 2 - armW / 2), 0.08 + 0.26, 0]} radius={0.06} color={c} roughness={0.95} />
+        ))}
       {Array.from({ length: n }, (_, i) => {
         const x = -inner / 2 + (i + 0.5) * (inner / n);
         return (
@@ -90,74 +104,130 @@ function Sofa({ w, d, h, c, seats }: ShapeProps & { seats?: number }) {
   );
 }
 
-function Chair({ w, d, h, c }: ShapeProps) {
+function Chair({ w, d, h, c, p }: ShapeProps) {
   const seatY = 0.45;
+  const legC = hex(p, "accent", c);
+  const arms = flag(p, "arms", false);
+  const cushion = flag(p, "cushion", false);
   return (
     <>
-      <Legs w={w} d={d} h={seatY - 0.02} inset={0.03} r={0.016} color={c} />
+      <Legs w={w} d={d} h={seatY - 0.02} inset={0.03} r={0.016} color={legC} />
       {[-1, 1].map((s) => (
-        <Cyl key={s} r={0.016} h={h - seatY} position={[s * (w / 2 - 0.03), seatY + (h - seatY) / 2, -d / 2 + 0.03]} color={c} segments={12} />
+        <Cyl key={s} r={0.016} h={h - seatY} position={[s * (w / 2 - 0.03), seatY + (h - seatY) / 2, -d / 2 + 0.03]} color={legC} segments={12} />
       ))}
       <Block size={[w, 0.04, d]} position={[0, seatY, 0]} radius={0.012} color={c} />
+      {cushion && <Block size={[w - 0.05, 0.05, d - 0.06]} position={[0, seatY + 0.045, 0.01]} radius={0.02} color={hex(p, "cushionColor", mix(c, LINEN, 0.6))} roughness={1} />}
       <Block size={[w - 0.04, 0.2, 0.025]} position={[0, h - 0.12, -d / 2 + 0.03]} radius={0.01} color={c} />
+      {arms &&
+        [-1, 1].map((s) => (
+          <group key={`a${s}`}>
+            <Block size={[0.035, 0.03, d - 0.06]} position={[s * (w / 2 - 0.03), seatY + 0.2, 0]} radius={0.008} color={legC} />
+            <Cyl r={0.013} h={0.2} position={[s * (w / 2 - 0.03), seatY + 0.1, d / 2 - 0.05]} color={legC} segments={10} />
+          </group>
+        ))}
     </>
   );
 }
 
-function Table({ w, d, h, c }: ShapeProps) {
+function Table({ w, d, h, c, p }: ShapeProps) {
+  const round = choice(p, "form", ["rect", "round"] as const, "rect") === "round";
+  const base = choice(p, "base", ["legs", "pedestal"] as const, "legs");
+  const legC = hex(p, "accent", c);
+  const legH = h - 0.04;
   return (
     <>
-      <Legs w={w} d={d} h={h - 0.04} inset={0.07} r={0.025} color={c} square />
-      <Block size={[w, 0.04, d]} position={[0, h - 0.02, 0]} radius={0.01} color={c} roughness={0.55} />
+      {base === "pedestal" ? (
+        <>
+          <Cyl r={0.045} h={legH} position={[0, legH / 2, 0]} color={legC} segments={16} />
+          <Cyl r={Math.min(w, d) * 0.28} r2={Math.min(w, d) * 0.3} h={0.03} position={[0, 0.015, 0]} color={legC} segments={32} />
+        </>
+      ) : round ? (
+        [0, 1, 2, 3].map((i) => {
+          const a = Math.PI / 4 + (i * Math.PI) / 2;
+          return <Cyl key={i} r={0.022} h={legH} position={[Math.cos(a) * (w / 2 - 0.1), legH / 2, Math.sin(a) * (d / 2 - 0.1)]} color={legC} segments={12} />;
+        })
+      ) : (
+        <Legs w={w} d={d} h={legH} inset={0.07} r={0.025} color={legC} square />
+      )}
+      {round ? (
+        <group scale={[w, 1, d]}>
+          <Cyl r={0.5} h={0.04} position={[0, h - 0.02, 0]} color={c} roughness={0.55} segments={48} />
+        </group>
+      ) : (
+        <Block size={[w, 0.04, d]} position={[0, h - 0.02, 0]} radius={0.01} color={c} roughness={0.55} />
+      )}
     </>
   );
 }
 
-function Desk({ w, d, h, c }: ShapeProps) {
+function Desk({ w, d, h, c, p }: ShapeProps) {
+  const side = choice(p, "drawers", ["right", "left", "none"] as const, "right");
+  const n = count(p, "drawerCount", 3, 1, 5);
+  const handle = hex(p, "accent", METAL);
   const unitW = Math.min(0.4, w * 0.35);
-  const ux = w / 2 - unitW / 2 - 0.02;
+  const dir = side === "left" ? -1 : 1;
+  const ux = dir * (w / 2 - unitW / 2 - 0.02);
   const uh = h - 0.04;
+  // Legs at the open end; both ends when there is no drawer unit.
+  const legXs = side === "none" ? [-w / 2 + 0.05, w / 2 - 0.05] : [-dir * (w / 2 - 0.05)];
   return (
     <>
       <Block size={[w, 0.03, d]} position={[0, h - 0.015, 0]} radius={0.008} color={c} roughness={0.55} />
-      {[-1, 1].map((s) => (
-        <Block key={s} size={[0.04, uh, 0.04]} position={[-w / 2 + 0.05, uh / 2, s * (d / 2 - 0.05)]} color={c} />
-      ))}
-      <Block size={[unitW, uh, d - 0.04]} position={[ux, uh / 2, 0]} color={c} />
-      {[0, 1, 2].map((i) => {
-        const fh = uh / 3;
-        const y = fh * i + fh / 2;
-        return (
-          <group key={i}>
-            <Block size={[unitW - 0.02, fh - 0.015, 0.012]} position={[ux, y, d / 2 - 0.02 + 0.006]} color={shade(c, 0.03)} />
-            <Block size={[0.1, 0.012, 0.012]} position={[ux, y + fh * 0.25, d / 2 - 0.005]} color={METAL} metalness={0.6} roughness={0.4} />
-          </group>
-        );
-      })}
+      {legXs.flatMap((x) =>
+        [-1, 1].map((s) => <Block key={`${x}${s}`} size={[0.04, uh, 0.04]} position={[x, uh / 2, s * (d / 2 - 0.05)]} color={c} />),
+      )}
+      {side !== "none" && (
+        <>
+          <Block size={[unitW, uh, d - 0.04]} position={[ux, uh / 2, 0]} color={c} />
+          {Array.from({ length: n }, (_, i) => {
+            const fh = uh / n;
+            const y = fh * i + fh / 2;
+            return (
+              <group key={i}>
+                <Block size={[unitW - 0.02, fh - 0.015, 0.012]} position={[ux, y, d / 2 - 0.02 + 0.006]} color={shade(c, 0.03)} />
+                <Block size={[0.1, 0.012, 0.012]} position={[ux, y + fh * 0.25, d / 2 - 0.005]} color={handle} metalness={0.6} roughness={0.4} />
+              </group>
+            );
+          })}
+        </>
+      )}
     </>
   );
 }
 
-function CoffeeTable({ w, d, h, c }: ShapeProps) {
+function CoffeeTable({ w, d, h, c, p }: ShapeProps) {
+  const round = choice(p, "form", ["round", "rect"] as const, "round") === "round";
+  const shelf = flag(p, "shelf", true);
+  const legC = hex(p, "accent", c);
   const legs = [0, 1, 2, 3].map((i) => {
     const a = Math.PI / 4 + (i * Math.PI) / 2;
-    return [Math.cos(a) * (w / 2 - 0.08), Math.sin(a) * (d / 2 - 0.08)] as const;
+    return round
+      ? ([Math.cos(a) * (w / 2 - 0.08), Math.sin(a) * (d / 2 - 0.08)] as const)
+      : ([Math.sign(Math.cos(a)) * (w / 2 - 0.06), Math.sign(Math.sin(a)) * (d / 2 - 0.06)] as const);
   });
   return (
     <>
-      <group scale={[w, 1, d]}>
-        <Cyl r={0.5} h={0.035} position={[0, h - 0.0175, 0]} color={c} roughness={0.5} segments={48} />
-        <Cyl r={0.42} h={0.02} position={[0, 0.12, 0]} color={c} roughness={0.6} segments={48} />
-      </group>
+      {round ? (
+        <group scale={[w, 1, d]}>
+          <Cyl r={0.5} h={0.035} position={[0, h - 0.0175, 0]} color={c} roughness={0.5} segments={48} />
+          {shelf && <Cyl r={0.42} h={0.02} position={[0, 0.12, 0]} color={c} roughness={0.6} segments={48} />}
+        </group>
+      ) : (
+        <>
+          <Block size={[w, 0.035, d]} position={[0, h - 0.0175, 0]} radius={0.008} color={c} roughness={0.5} />
+          {shelf && <Block size={[w - 0.1, 0.02, d - 0.1]} position={[0, 0.12, 0]} color={c} roughness={0.6} />}
+        </>
+      )}
       {legs.map(([x, z], i) => (
-        <Cyl key={i} r={0.02} h={h - 0.035} position={[x, (h - 0.035) / 2, z]} color={c} segments={12} />
+        <Cyl key={i} r={0.02} h={h - 0.035} position={[x, (h - 0.035) / 2, z]} color={legC} segments={12} />
       ))}
     </>
   );
 }
 
-function Wardrobe({ w, d, h, c }: ShapeProps) {
+function Wardrobe({ w, d, h, c, p }: ShapeProps) {
   const bodyH = h - 0.06;
+  const handle = hex(p, "accent", METAL);
   return (
     <>
       <Block size={[w - 0.04, 0.06, d - 0.04]} position={[0, 0.03, 0]} color={shade(c, -0.12)} />
@@ -165,20 +235,25 @@ function Wardrobe({ w, d, h, c }: ShapeProps) {
       {[-1, 1].map((s) => (
         <group key={s}>
           <Block size={[w / 2 - 0.008, bodyH - 0.02, 0.02]} position={[s * (w / 4), 0.06 + bodyH / 2, d / 2 - 0.01]} color={shade(c, 0.02)} radius={0.004} />
-          <Cyl r={0.008} h={0.28} position={[s * 0.035, 0.06 + bodyH * 0.55, d / 2 + 0.015]} color={METAL} metalness={0.7} roughness={0.35} segments={10} />
+          <Cyl r={0.008} h={0.28} position={[s * 0.035, 0.06 + bodyH * 0.55, d / 2 + 0.015]} color={handle} metalness={0.7} roughness={0.35} segments={10} />
         </group>
       ))}
     </>
   );
 }
 
-function Drawers({ w, d, h, c, rows, cols, legH }: ShapeProps & { rows: number; cols: number; legH: number }) {
+function Drawers({ w, d, h, c, p, rows: r0, cols: c0, legH: l0 }: ShapeProps & { rows: number; cols: number; legH: number }) {
+  const rows = count(p, "rows", r0, 1, 8);
+  const cols = count(p, "cols", c0, 1, 4);
+  const legH = num(p, "legH", l0, 0, Math.max(0, h - 0.1));
+  const bar = choice(p, "handle", ["knob", "bar"] as const, "knob") === "bar";
+  const handle = hex(p, "accent", METAL);
   const bodyH = h - legH;
   const fh = bodyH / rows;
   const fw = w / cols;
   return (
     <>
-      <Legs w={w} d={d} h={legH} inset={0.04} r={0.018} color={shade(c, -0.15)} />
+      {legH > 0 && <Legs w={w} d={d} h={legH} inset={0.04} r={0.018} color={shade(c, -0.15)} />}
       <Block size={[w, bodyH, d - 0.015]} position={[0, legH + bodyH / 2, -0.0075]} radius={0.008} color={c} />
       {Array.from({ length: rows * cols }, (_, i) => {
         const r = Math.floor(i / cols);
@@ -188,7 +263,11 @@ function Drawers({ w, d, h, c, rows, cols, legH }: ShapeProps & { rows: number; 
         return (
           <group key={i}>
             <Block size={[fw - 0.012, fh - 0.012, 0.015]} position={[x, y, d / 2 - 0.0075]} color={shade(c, 0.025)} radius={0.004} />
-            <Ball r={0.013} position={[x, y, d / 2 + 0.008]} color={METAL} metalness={0.7} roughness={0.35} />
+            {bar ? (
+              <Block size={[Math.min(0.14, fw * 0.4), 0.012, 0.014]} position={[x, y + fh * 0.2, d / 2 + 0.006]} color={handle} metalness={0.6} roughness={0.4} />
+            ) : (
+              <Ball r={0.013} position={[x, y, d / 2 + 0.008]} color={handle} metalness={0.7} roughness={0.35} />
+            )}
           </group>
         );
       })}
@@ -198,74 +277,84 @@ function Drawers({ w, d, h, c, rows, cols, legH }: ShapeProps & { rows: number; 
 
 const BOOK_COLORS = ["#8c3b2e", "#2e4a62", "#d6b45c", "#56704f", "#e8e2d4", "#6b4a6b", "#c98b6b"];
 
-function Bookcase({ w, d, h, c }: ShapeProps) {
+function Bookcase({ w, d, h, c, p }: ShapeProps) {
   const t = 0.02;
-  const shelves = 5;
+  const shelves = count(p, "shelves", 5, 1, 10);
+  const books = flag(p, "books", true);
+  const back = flag(p, "back", true);
   const gap = (h - t) / shelves;
   return (
     <>
       {[-1, 1].map((s) => (
         <Block key={s} size={[t, h, d]} position={[s * (w / 2 - t / 2), h / 2, 0]} color={c} />
       ))}
-      <Block size={[w, h, 0.01]} position={[0, h / 2, -d / 2 + 0.005]} color={shade(c, -0.06)} />
+      {back && <Block size={[w, h, 0.01]} position={[0, h / 2, -d / 2 + 0.005]} color={shade(c, -0.06)} />}
       {Array.from({ length: shelves + 1 }, (_, i) => (
         <Block key={i} size={[w - 2 * t, t, d - 0.01]} position={[0, t / 2 + i * gap, 0.005]} color={c} />
       ))}
-      {Array.from({ length: shelves }, (_, s) => {
-        const books: ReactNode[] = [];
-        let x = -w / 2 + t + 0.02;
-        const limit = w / 2 - t - 0.02 - (rand(s) > 0.5 ? w * 0.35 : 0.05);
-        let i = 0;
-        while (x < limit) {
-          const seed = s * 31 + i;
-          const bw = 0.025 + rand(seed) * 0.025;
-          const bh = gap * (0.55 + rand(seed + 7) * 0.3);
-          books.push(
-            <Block key={i} size={[bw, bh, d * 0.75]} position={[x + bw / 2, t + s * gap + bh / 2, 0.005]} color={BOOK_COLORS[Math.floor(rand(seed + 3) * BOOK_COLORS.length)]} roughness={0.9} />,
-          );
-          x += bw + 0.003;
-          i++;
-        }
-        return <group key={s}>{books}</group>;
-      })}
+      {books &&
+        Array.from({ length: shelves }, (_, s) => {
+          const row: ReactNode[] = [];
+          let x = -w / 2 + t + 0.02;
+          const limit = w / 2 - t - 0.02 - (rand(s) > 0.5 ? w * 0.35 : 0.05);
+          let i = 0;
+          while (x < limit) {
+            const seed = s * 31 + i;
+            const bw = 0.025 + rand(seed) * 0.025;
+            const bh = gap * (0.55 + rand(seed + 7) * 0.3);
+            row.push(
+              <Block key={i} size={[bw, bh, d * 0.75]} position={[x + bw / 2, t + s * gap + bh / 2, 0.005]} color={BOOK_COLORS[Math.floor(rand(seed + 3) * BOOK_COLORS.length)]} roughness={0.9} />,
+            );
+            x += bw + 0.003;
+            i++;
+          }
+          return <group key={s}>{row}</group>;
+        })}
     </>
   );
 }
 
-function Shelf({ w, d, h, c }: ShapeProps) {
+function Shelf({ w, d, h, c, p }: ShapeProps) {
+  const decor = flag(p, "decor", true);
   return (
     <>
       <Block size={[w, h, d]} position={[0, h / 2, 0]} radius={0.006} color={c} />
       {[-1, 1].map((s) => (
-        <Block key={s} size={[0.02, 0.14, d * 0.85]} position={[s * (w / 2 - 0.1), -0.07, -d * 0.07]} color={METAL} metalness={0.5} roughness={0.4} />
+        <Block key={s} size={[0.02, 0.14, d * 0.85]} position={[s * (w / 2 - 0.1), -0.07, -d * 0.07]} color={hex(p, "accent", METAL)} metalness={0.5} roughness={0.4} />
       ))}
-      <Cyl r={0.04} r2={0.035} h={0.16} position={[-w / 2 + 0.12, h + 0.08, 0]} color="#e6e0d6" roughness={0.4} />
-      {[0, 1, 2].map((i) => (
-        <Block key={i} size={[0.03, 0.2 - i * 0.02, d * 0.7]} position={[0.05 + i * 0.033, h + 0.1 - i * 0.01, 0]} color={BOOK_COLORS[i + 1]} />
-      ))}
-      <Cyl r={0.045} r2={0.035} h={0.08} position={[w / 2 - 0.12, h + 0.04, 0]} color="#b7653f" />
-      <Ball r={0.06} position={[w / 2 - 0.12, h + 0.13, 0]} color="#5f7f4d" flat />
+      {decor && (
+        <>
+          <Cyl r={0.04} r2={0.035} h={0.16} position={[-w / 2 + 0.12, h + 0.08, 0]} color="#e6e0d6" roughness={0.4} />
+          {[0, 1, 2].map((i) => (
+            <Block key={i} size={[0.03, 0.2 - i * 0.02, d * 0.7]} position={[0.05 + i * 0.033, h + 0.1 - i * 0.01, 0]} color={BOOK_COLORS[i + 1]} />
+          ))}
+          <Cyl r={0.045} r2={0.035} h={0.08} position={[w / 2 - 0.12, h + 0.04, 0]} color="#b7653f" />
+          <Ball r={0.06} position={[w / 2 - 0.12, h + 0.13, 0]} color="#5f7f4d" flat />
+        </>
+      )}
     </>
   );
 }
 
-function FloorLamp({ w, h, c }: ShapeProps) {
+function FloorLamp({ w, h, c, p }: ShapeProps) {
+  const fabric = hex(p, "shadeColor", SHADE_FABRIC);
   return (
     <>
       <Cyl r={w * 0.38} h={0.03} position={[0, 0.015, 0]} color={c} metalness={0.6} roughness={0.35} segments={32} />
       <Cyl r={0.012} h={h - 0.28} position={[0, (h - 0.28) / 2, 0]} color={c} metalness={0.6} roughness={0.35} segments={10} />
-      <Cyl r={w * 0.3} r2={w * 0.5} h={0.3} position={[0, h - 0.15, 0]} open color={SHADE_FABRIC} emissive={WARM} emissiveIntensity={0.35} roughness={1} segments={32} />
+      <Cyl r={w * 0.3} r2={w * 0.5} h={0.3} position={[0, h - 0.15, 0]} open color={fabric} emissive={WARM} emissiveIntensity={0.35} roughness={1} segments={32} />
       <Ball r={0.035} position={[0, h - 0.2, 0]} color="#fff8e8" emissive={WARM} emissiveIntensity={2} />
     </>
   );
 }
 
-function TableLamp({ w, h, c }: ShapeProps) {
+function TableLamp({ w, h, c, p }: ShapeProps) {
+  const fabric = hex(p, "shadeColor", SHADE_FABRIC);
   return (
     <>
       <Ball r={w * 0.32} position={[0, w * 0.28, 0]} scale={[1, 0.85, 1]} color={c} roughness={0.3} metalness={0.3} />
       <Cyl r={0.008} h={h * 0.35} position={[0, w * 0.5 + h * 0.12, 0]} color={c} metalness={0.6} segments={8} />
-      <Cyl r={w * 0.32} r2={w * 0.5} h={h * 0.42} position={[0, h - h * 0.21, 0]} open color={SHADE_FABRIC} emissive={WARM} emissiveIntensity={0.35} roughness={1} segments={32} />
+      <Cyl r={w * 0.32} r2={w * 0.5} h={h * 0.42} position={[0, h - h * 0.21, 0]} open color={fabric} emissive={WARM} emissiveIntensity={0.35} roughness={1} segments={32} />
     </>
   );
 }
@@ -283,19 +372,31 @@ function Pendant({ w, h, c }: ShapeProps) {
   );
 }
 
-function Rug({ w, d, c }: ShapeProps) {
+function Rug({ w, d, c, p }: ShapeProps) {
+  const round = choice(p, "form", ["rect", "round"] as const, "rect") === "round";
+  const border = flag(p, "border", true);
+  const inner = hex(p, "accent", shade(c, -0.08));
+  if (round) {
+    return (
+      <group scale={[w, 1, d]}>
+        <Cyl r={0.5} h={0.012} position={[0, 0.006, 0]} color={c} roughness={1} segments={48} />
+        {border && <Cyl r={0.42} h={0.002} position={[0, 0.0125, 0]} color={inner} roughness={1} segments={48} />}
+        {border && <Cyl r={0.36} h={0.002} position={[0, 0.0135, 0]} color={c} roughness={1} segments={48} />}
+      </group>
+    );
+  }
   return (
     <>
       <Block size={[w, 0.012, d]} position={[0, 0.006, 0]} radius={0.004} color={c} roughness={1} />
-      <Block size={[w - 0.16, 0.002, d - 0.16]} position={[0, 0.0125, 0]} color={shade(c, -0.08)} roughness={1} />
-      <Block size={[w - 0.26, 0.002, d - 0.26]} position={[0, 0.0135, 0]} color={c} roughness={1} />
+      {border && <Block size={[w - 0.16, 0.002, d - 0.16]} position={[0, 0.0125, 0]} color={inner} roughness={1} />}
+      {border && <Block size={[w - 0.26, 0.002, d - 0.26]} position={[0, 0.0135, 0]} color={c} roughness={1} />}
     </>
   );
 }
 
-function Plant({ w, h, c }: ShapeProps) {
+function Plant({ w, h, c, p }: ShapeProps) {
   const potH = h * 0.28;
-  const leaves = 9;
+  const leaves = count(p, "leaves", 9, 3, 18);
   return (
     <>
       <Cyl r={w * 0.36} r2={w * 0.28} h={potH} position={[0, potH / 2, 0]} color={c} roughness={0.85} segments={28} />
@@ -321,13 +422,13 @@ function Plant({ w, h, c }: ShapeProps) {
   );
 }
 
-function WallArt({ w, d, h, c }: ShapeProps) {
+function WallArt({ w, d, h, c, p }: ShapeProps) {
   const z = d / 2;
   const iw = w - 0.1;
   const ih = h - 0.1;
   return (
     <>
-      <Block size={[w, h, d]} position={[0, h / 2, 0]} radius={0.004} color="#2f2a26" roughness={0.5} />
+      <Block size={[w, h, d]} position={[0, h / 2, 0]} radius={0.004} color={hex(p, "accent", "#2f2a26")} roughness={0.5} />
       <mesh position={[0, h / 2, z + 0.001]}>
         <planeGeometry args={[w - 0.04, h - 0.04]} />
         <meshStandardMaterial color="#f5f2ec" roughness={0.9} />
@@ -348,7 +449,15 @@ function WallArt({ w, d, h, c }: ShapeProps) {
   );
 }
 
-function Mirror({ w, d, h, c }: ShapeProps) {
+function Mirror({ w, d, h, c, p }: ShapeProps) {
+  if (choice(p, "form", ["round", "rect"] as const, "round") === "rect") {
+    return (
+      <>
+        <Block size={[w, h, d]} position={[0, h / 2, 0]} radius={0.006} color={c} metalness={0.7} roughness={0.3} />
+        <Block size={[w - 0.06, h - 0.06, 0.004]} position={[0, h / 2, d / 2 + 0.001]} color="#dfe7ec" metalness={1} roughness={0.04} />
+      </>
+    );
+  }
   return (
     <group position={[0, h / 2, 0]} scale={[w, h, 1]}>
       <Cyl r={0.5} h={d} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]} color={c} metalness={0.7} roughness={0.3} segments={48} />
@@ -380,7 +489,13 @@ const shapes: Record<ShapeKey, (p: ShapeProps) => ReactNode> = {
 };
 
 /** A shape sized to w×d×h metres. Origin at bottom-centre, front facing +Z. */
-export function ShapeModel({ shape, w, d, h, color }: { shape: ShapeKey; w: number; d: number; h: number; color: string }) {
+export function ShapeModel({ shape, w, d, h, color, params = {} }: { shape: ShapeKey; w: number; d: number; h: number; color: string; params?: Params }) {
   const Shape = shapes[shape];
-  return <group>{Shape({ w, d, h, c: color })}</group>;
+  if (!Shape) return null;
+  return <group>{Shape({ w, d, h, c: color, p: params })}</group>;
+}
+
+/** True when `shape` names one of the built-in shapes. */
+export function isShapeKey(shape: unknown): shape is ShapeKey {
+  return typeof shape === "string" && shape in shapes;
 }
